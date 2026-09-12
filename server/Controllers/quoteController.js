@@ -1,5 +1,4 @@
 import { getMarketQuote } from "../services/marketDataServices.js";
-
 export async function getQuote(req, res) {
   try {
     const symbol = req.params.symbol;
