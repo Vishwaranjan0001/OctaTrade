@@ -1,6 +1,7 @@
 import bcrypt from "bcryptjs";
 import {User} from "../models/User.js";
 import jwt from "jsonwebtoken";
+import { createWallet } from "./walletServices.js";
 
 export async function registerUser({name,email,password}){
     const passwordHash=await bcrypt.hash(password,12);
@@ -11,6 +12,7 @@ export async function registerUser({name,email,password}){
             passwordHash: passwordHash
         }
     )
+    await createWallet(user._id);
       return user;
 }
 
