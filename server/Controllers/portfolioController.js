@@ -1,8 +1,10 @@
-import { getHoldingsByUserId } from "../services/portfolioServices.js";
+import { getPortfolioByUserId } from "../services/portfolioServices.js";
 
 export async function getMyPortfolio(req, res) {
   try {
-    const holdings = await getHoldingsByUserId(req.userId);
+    const holdings = await getPortfolioByUserId(
+  req.userId
+);
 
     return res.status(200).json({
       holdings: holdings
