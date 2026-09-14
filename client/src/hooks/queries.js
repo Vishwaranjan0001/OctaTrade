@@ -162,7 +162,17 @@ export function quoteQueryOptions(symbol, { enabled = true } = {}) {
     enabled: Boolean(normalised) && enabled,
     // A quote is a live value: keep it briefly, then refetch on demand.
     staleTime: 15_000,
-    gcTime: 60_000
+    gcTime: 60_000,
+    /*
+      Quote lookups fail fast, unlike the app-wide policy.
+
+      The quote controller answers 502 for every upstream failure, including a
+      symbol the provider does not recognise. Since a mistyped symbol is the
+      most common cause, retrying it twice with backoff just makes the user wait
+      ~4s to be told about a typo. Only a genuine transport failure is worth one
+      retry here.
+    */
+    retry: (failureCount, error) => failureCount < 1 && Boolean(error?.isNetworkError)
   };
 }
 

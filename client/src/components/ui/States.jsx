@@ -70,9 +70,18 @@ export function describeError(error, subject = "this data") {
     }
 
     if (error.isUnauthorized) {
+      /*
+        A 401 means two different things depending on where it came from.
+        On a protected request the session really has expired. On the sign-in
+        form it means the credentials were wrong — and telling someone their
+        session expired when they never had one is both wrong and confusing.
+        The API distinguishes them by sending a message, so prefer it.
+      */
+      const fromApi = error.body && (error.body.message || error.body.msg);
+
       return {
-        title: "Session expired",
-        description: "Sign in again to continue.",
+        title: fromApi || "Session expired",
+        description: fromApi ? null : "Sign in again to continue.",
         icon: AlertTriangle,
         canRetry: false
       };
