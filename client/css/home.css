@@ -1,0 +1,229 @@
+:root {
+  --bg: #060a12;
+  --ink: #e8f4ef;
+  --ink-dim: #8fa8a1;
+  --accent: #56e2b4;
+  --accent-soft: rgba(86, 226, 180, 0.14);
+  --line: rgba(86, 226, 180, 0.18);
+  --panel: rgba(8, 18, 24, 0.62);
+  --up: #56e2b4;
+  --down: #f0796a;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  min-height: 100%;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI",
+    Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* The field sits behind everything and never intercepts input. */
+#higgs-field {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* Darkening veil so the animation stays a background, not a competitor. */
+#higgs-field + .veil {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background:
+    /* Keeps the reading column dark whatever the field is doing behind it. */
+    linear-gradient(
+      100deg,
+      rgba(6, 10, 18, 0.82) 0%,
+      rgba(6, 10, 18, 0.5) 42%,
+      rgba(6, 10, 18, 0.16) 72%,
+      rgba(6, 10, 18, 0.3) 100%
+    ),
+    radial-gradient(
+      120% 80% at 50% 45%,
+      rgba(6, 10, 18, 0.06) 0%,
+      rgba(6, 10, 18, 0.42) 58%,
+      rgba(6, 10, 18, 0.86) 100%
+    );
+}
+
+.page {
+  position: relative;
+  z-index: 2;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding-block: 28px 72px;
+  padding-inline: 20px;
+}
+
+header.nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 650;
+  letter-spacing: 0.02em;
+}
+
+.brand .mark {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 1px solid var(--accent);
+  position: relative;
+}
+
+/* A small stand-in for the vacuum manifold: ring plus the chosen phase. */
+.brand .mark::after {
+  content: "";
+  position: absolute;
+  top: -2px;
+  left: 50%;
+  width: 5px;
+  height: 5px;
+  margin-left: -2.5px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 10px var(--accent);
+}
+
+.nav-links {
+  display: flex;
+  gap: 22px;
+  align-items: center;
+  font-size: 0.9rem;
+  color: var(--ink-dim);
+}
+
+.nav-links a { color: inherit; text-decoration: none; }
+.nav-links a:hover { color: var(--ink); }
+
+.btn {
+  display: inline-block;
+  padding: 10px 20px;
+  border-radius: 999px;
+  font-size: 0.92rem;
+  font-weight: 600;
+  text-decoration: none;
+  border: 1px solid var(--line);
+  color: var(--ink);
+  background: var(--accent-soft);
+  transition: background 140ms ease, transform 140ms ease;
+}
+
+.btn:hover { background: rgba(86, 226, 180, 0.24); transform: translateY(-1px); }
+.btn.ghost { background: transparent; }
+
+.hero {
+  padding-block: 96px 64px;
+  max-width: 700px;
+}
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.74rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--accent);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 6px 14px;
+}
+
+.hero h1 {
+  margin: 22px 0 0;
+  font-size: clamp(2.3rem, 6vw, 4rem);
+  line-height: 1.04;
+  letter-spacing: -0.03em;
+  font-weight: 680;
+}
+
+.hero h1 em {
+  font-style: normal;
+  color: var(--accent);
+}
+
+.hero p {
+  margin: 20px 0 0;
+  font-size: clamp(1rem, 2vw, 1.14rem);
+  line-height: 1.6;
+  color: var(--ink-dim);
+  max-width: 54ch;
+}
+
+.hero-actions {
+  margin-top: 34px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 16px;
+  margin-top: 40px;
+}
+
+.card {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 22px;
+  background: var(--panel);
+  backdrop-filter: blur(9px);
+}
+
+.card h3 {
+  margin: 0 0 8px;
+  font-size: 1rem;
+  font-weight: 620;
+}
+
+.card p {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.55;
+  color: var(--ink-dim);
+}
+
+.footnote {
+  margin-top: 48px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(86, 226, 180, 0.12);
+  font-size: 0.8rem;
+  line-height: 1.6;
+  color: rgba(143, 168, 161, 0.75);
+  max-width: 68ch;
+}
+
+.footnote code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  color: var(--accent);
+}
+
+@media (max-width: 620px) {
+  .hero { padding-block: 56px 40px; }
+  .nav-links { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn { transition: none; }
+}

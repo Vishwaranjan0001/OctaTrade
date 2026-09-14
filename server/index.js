@@ -1,4 +1,6 @@
 import express from "express";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import "dotenv/config";
 import { connectDatabase } from "./config/database.js";
 import quoteRoutes from "./routes/quoteRoutes.js";
@@ -6,7 +8,9 @@ import authRoutes from "./routes/authRoutes.js";
 import walletRoutes from "./routes/walletRoutes.js";
 import portfolioRoutes from "./routes/portfolioRoutes.js";
 const app=express();
+const clientDir=path.join(path.dirname(fileURLToPath(import.meta.url)),"..","client");
 app.use(express.json());
+app.use(express.static(clientDir));
 await connectDatabase();
 const PORT=3000;
 app.get("/health",(req,res)=>{

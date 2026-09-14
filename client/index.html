@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>OctaTrade — paper trading, real market data</title>
+    <meta
+      name="description"
+      content="OctaTrade is a real-time paper-trading simulator: virtual money, live quotes, and a portfolio that behaves like the real thing."
+    />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 fill=%27%23060a12%27/%3E%3Ccircle cx=%2716%27 cy=%2716%27 r=%2710%27 fill=%27none%27 stroke=%27%2356e2b4%27 stroke-width=%271.5%27/%3E%3Ccircle cx=%2716%27 cy=%276%27 r=%273%27 fill=%27%2356e2b4%27/%3E%3C/svg%3E" />
+    <link rel="stylesheet" href="/css/home.css" />
+  </head>
+  <body>
+    <canvas id="higgs-field" aria-hidden="true"></canvas>
+    <div class="veil"></div>
+
+    <div class="page">
+      <header class="nav">
+        <div class="brand"><span class="mark"></span> OctaTrade</div>
+        <nav class="nav-links">
+          <a href="#how">How it works</a>
+          <a href="#field">The background</a>
+          <a href="/api/quotes">API</a>
+        </nav>
+        <a class="btn" href="#start">Open an account</a>
+      </header>
+
+      <section class="hero">
+        <span class="eyebrow">Paper trading · live quotes</span>
+        <h1>Trade the real market with <em>imaginary money</em>.</h1>
+        <p>
+          Every quote is live. Every fill, position and P&amp;L is simulated.
+          Learn how a portfolio actually moves before any of your own money is
+          on the line.
+        </p>
+        <div class="hero-actions" id="start">
+          <a class="btn" href="#">Start with ₹1,00,000 virtual</a>
+          <a class="btn ghost" href="#how">See how it works</a>
+        </div>
+      </section>
+
+      <section class="cards" id="how">
+        <div class="card">
+          <h3>Live market data</h3>
+          <p>
+            Quotes come straight from the market feed, so a simulated position
+            reprices exactly the way a real one would.
+          </p>
+        </div>
+        <div class="card">
+          <h3>A wallet that keeps score</h3>
+          <p>
+            Deposits, debits and every transaction are recorded, so your
+            balance history is auditable rather than hand-waved.
+          </p>
+        </div>
+        <div class="card">
+          <h3>Holdings and P&amp;L</h3>
+          <p>
+            Positions carry an average cost, and unrealised profit is marked
+            against the latest quote on every read.
+          </p>
+        </div>
+      </section>
+
+      <p class="footnote" id="field">
+        The background is a live simulation of a complex scalar field in the
+        Higgs potential <code>V(φ) = −μ²|φ|² + λ|φ|⁴</code>. The origin is
+        unstable, so the minima form a circle at <code>|φ| = v</code> — the
+        ring you can see. The field picks one point on that ring and breaks the
+        symmetry; the drifting highlight is the Goldstone mode running around
+        it. The particles crossing the screen each couple to the condensate
+        with a different strength <code>g</code>, pick up mass
+        <code>m = g·v</code>, and the heavy ones visibly slow down and drag a
+        wake. Nothing is pre-rendered, and it stops when the tab is hidden or
+        when you ask for reduced motion.
+      </p>
+    </div>
+
+    <script type="module">
+      import { startHiggsField } from "/js/higgs-field.js";
+      startHiggsField(document.getElementById("higgs-field"));
+    </script>
+  </body>
+</html>
