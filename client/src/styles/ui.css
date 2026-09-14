@@ -1,0 +1,636 @@
+/* OctaTrade UI primitives. */
+
+/* ---------------- Logo -------------------------------------------------- */
+.ot-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  color: var(--text);
+}
+
+.ot-logo__mark { flex: none; }
+
+.ot-logo__word {
+  font-family: var(--font-display);
+  font-weight: 660;
+  font-size: 1.02rem;
+  letter-spacing: -0.022em;
+}
+
+.ot-logo__word-b { color: var(--text-muted); font-weight: 520; }
+
+/* ---------------- Button ------------------------------------------------ */
+.ot-btn {
+  --cut: var(--cut-sm);
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  border: 1px solid transparent;
+  clip-path: polygon(
+    var(--cut) 0, calc(100% - var(--cut)) 0,
+    100% var(--cut), 100% calc(100% - var(--cut)),
+    calc(100% - var(--cut)) 100%, var(--cut) 100%,
+    0 calc(100% - var(--cut)), 0 var(--cut)
+  );
+  transition: background-color var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out),
+    transform var(--dur-fast) var(--ease-out);
+  /* Comfortable touch target on mobile without changing desktop density. */
+  min-height: 38px;
+}
+
+.ot-btn--sm { padding: 0 13px; min-height: 32px; font-size: 0.72rem; }
+.ot-btn--md { padding: 0 18px; min-height: 40px; }
+.ot-btn--lg { padding: 0 24px; min-height: 48px; font-size: 0.82rem; }
+.ot-btn--block { width: 100%; }
+
+.ot-btn:active:not(:disabled) { transform: translateY(1px); }
+
+.ot-btn--primary {
+  background: var(--accent);
+  color: var(--text-on-accent);
+  font-weight: 620;
+}
+.ot-btn--primary:hover:not(:disabled) { background: var(--accent-hover); }
+
+.ot-btn--secondary {
+  background: transparent;
+  color: var(--text);
+  border-color: var(--line-strong);
+}
+.ot-btn--secondary:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-quiet);
+}
+
+.ot-btn--ghost { background: transparent; color: var(--text-muted); }
+.ot-btn--ghost:hover:not(:disabled) { color: var(--text); background: var(--surface-hover); }
+
+.ot-btn--quiet {
+  background: var(--surface-hover);
+  color: var(--text-secondary);
+  border-color: var(--line);
+}
+.ot-btn--quiet:hover:not(:disabled) { color: var(--text); border-color: var(--line-strong); }
+
+.ot-btn--danger {
+  background: transparent;
+  color: var(--neg);
+  border-color: color-mix(in srgb, var(--neg) 45%, transparent);
+}
+.ot-btn--danger:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--neg) 12%, transparent);
+}
+
+.ot-btn:disabled,
+.ot-btn[aria-disabled="true"] {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.ot-btn__spinner { animation: ot-spin 820ms linear infinite; }
+
+@keyframes ot-spin { to { transform: rotate(360deg); } }
+
+/* ---------------- Panel ------------------------------------------------- */
+.ot-panel-shell {
+  --cut: var(--cut);
+  position: relative;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  clip-path: polygon(
+    var(--cut) 0, calc(100% - var(--cut)) 0,
+    100% var(--cut), 100% calc(100% - var(--cut)),
+    calc(100% - var(--cut)) 100%, var(--cut) 100%,
+    0 calc(100% - var(--cut)), 0 var(--cut)
+  );
+}
+
+.ot-panel-shell {
+  box-shadow: inset 0 1px 0 rgba(214, 228, 245, 0.045);
+}
+
+/* The lit-top-edge treatment only reads as material on dark surfaces. */
+[data-theme="light"] .ot-panel-shell {
+  box-shadow: none;
+}
+
+.ot-panel-shell.is-inset { background: var(--surface-inset); }
+.ot-panel-shell.is-flush { background: transparent; border-color: transparent; clip-path: none; }
+
+.ot-panel-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--line);
+  flex-wrap: wrap;
+}
+
+.ot-panel-head__title-row {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.ot-panel-head__meta { color: var(--text-faint); }
+
+.ot-panel-head__desc {
+  margin-top: 5px;
+  font-size: var(--step-small);
+  color: var(--text-muted);
+  max-width: 62ch;
+}
+
+.ot-panel-head__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.ot-panel-body { padding: 18px; }
+
+/* ---------------- Fields ------------------------------------------------ */
+.ot-field { display: flex; flex-direction: column; gap: 7px; }
+
+.ot-field__label {
+  font-family: var(--font-mono);
+  font-size: var(--step-label);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.ot-field__control { position: relative; display: flex; align-items: center; }
+
+.ot-input {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 13px;
+  background: var(--surface-inset);
+  border: 1px solid var(--line-strong);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 0.92rem;
+  letter-spacing: -0.005em;
+  /* 16px minimum on mobile stops iOS Safari zooming the viewport on focus. */
+  transition: border-color var(--dur-fast) var(--ease-out),
+    background-color var(--dur-fast) var(--ease-out);
+}
+
+@media (max-width: 719px) {
+  .ot-input { font-size: 16px; }
+}
+
+.ot-input::placeholder { color: var(--text-faint); }
+
+.ot-input:hover { border-color: var(--steel-400); }
+
+.ot-input:focus-visible {
+  border-color: var(--accent);
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 1px;
+  background: var(--surface);
+}
+
+.ot-input--password { padding-right: 44px; }
+
+.ot-field.has-error .ot-input { border-color: var(--neg); }
+
+.ot-field__reveal {
+  position: absolute;
+  right: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  color: var(--text-muted);
+  transition: color var(--dur-fast) var(--ease-out);
+}
+
+.ot-field__reveal:hover { color: var(--text); }
+
+.ot-field__suffix {
+  position: absolute;
+  right: 12px;
+  pointer-events: none;
+  color: var(--text-faint);
+}
+
+.ot-field__hint { font-size: 0.78rem; color: var(--text-faint); }
+
+.ot-field__error {
+  font-size: 0.78rem;
+  color: var(--neg);
+  display: flex;
+  gap: 6px;
+}
+
+/* ---------------- Segmented control ------------------------------------- */
+.ot-segmented {
+  display: inline-flex;
+  padding: 3px;
+  background: var(--surface-inset);
+  border: 1px solid var(--line);
+  gap: 3px;
+  width: 100%;
+}
+
+.ot-segmented__option {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 38px;
+  padding: 0 14px;
+  font-family: var(--font-mono);
+  font-size: 0.76rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  transition: background-color var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out);
+}
+
+.ot-segmented__option:hover { color: var(--text); }
+
+.ot-segmented__option.is-active {
+  background: var(--surface-hover);
+  color: var(--text);
+  box-shadow: inset 0 0 0 1px var(--line-strong);
+}
+
+.ot-segmented__option.is-active.is-pos {
+  background: color-mix(in srgb, var(--pos) 16%, transparent);
+  color: var(--pos);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--pos) 45%, transparent);
+}
+
+.ot-segmented__option.is-active.is-neg {
+  background: color-mix(in srgb, var(--neg) 16%, transparent);
+  color: var(--neg);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--neg) 45%, transparent);
+}
+
+/* ---------------- States ------------------------------------------------ */
+.ot-state {
+  display: flex;
+  gap: 14px;
+  padding: 28px 22px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.ot-state.is-compact { padding: 16px; gap: 10px; }
+
+.ot-state__glyph {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  flex: none;
+  border: 1px solid var(--line-strong);
+  color: var(--text-muted);
+  --cut: var(--cut-sm);
+  clip-path: polygon(
+    var(--cut) 0, calc(100% - var(--cut)) 0,
+    100% var(--cut), 100% calc(100% - var(--cut)),
+    calc(100% - var(--cut)) 100%, var(--cut) 100%,
+    0 calc(100% - var(--cut)), 0 var(--cut)
+  );
+}
+
+.ot-state--error .ot-state__glyph { color: var(--neg); border-color: color-mix(in srgb, var(--neg) 40%, transparent); }
+
+.ot-state__text { flex: 1 1 240px; min-width: 0; }
+
+.ot-state__title {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1rem;
+  letter-spacing: var(--tracking-tight);
+  color: var(--text);
+}
+
+.ot-state__desc {
+  margin-top: 5px;
+  font-size: var(--step-small);
+  color: var(--text-muted);
+  max-width: 64ch;
+}
+
+.ot-state__req {
+  margin-top: 10px;
+  font-size: 0.76rem;
+  color: var(--text-faint);
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: baseline;
+}
+
+.ot-state__actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.ot-state--unavailable {
+  border: 1px dashed var(--line-strong);
+  background: color-mix(in srgb, var(--surface-inset) 60%, transparent);
+  justify-content: center;
+  text-align: left;
+}
+
+.ot-state--loading { padding: 18px; display: block; }
+
+/* ---------------- Skeleton ---------------------------------------------- */
+.ot-skeleton {
+  display: block;
+  background: linear-gradient(
+    90deg,
+    var(--surface-hover) 0%,
+    color-mix(in srgb, var(--surface-hover) 45%, var(--surface)) 50%,
+    var(--surface-hover) 100%
+  );
+  background-size: 200% 100%;
+  animation: ot-shimmer 1400ms var(--ease-in-out) infinite;
+}
+
+@keyframes ot-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.ot-skeleton-rows { display: flex; flex-direction: column; gap: 14px; }
+
+.ot-skeleton-rows__row {
+  display: flex;
+  gap: 18px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.ot-inline-loader {
+  display: inline-flex;
+  align-items: center;
+  color: var(--text-faint);
+}
+
+.ot-inline-loader svg { animation: ot-spin 820ms linear infinite; }
+
+/* ---------------- Table ------------------------------------------------- */
+.ot-table-wrap {
+  width: 100%;
+  max-width: 100%;
+  /*
+    Scroll affordance for wide blotters.
+
+    The two `local` gradients paint the panel colour over each edge and scroll
+    WITH the content, so they uncover; the two `scroll` shadows stay pinned to
+    the container. The net effect is a shadow that appears only on the side
+    that still has content off-screen — no JavaScript, and it disappears when
+    the table fits. Without it a clipped column just looks like a bug.
+  */
+  background:
+    linear-gradient(to right, var(--surface), transparent) 0 0 / 34px 100% no-repeat local,
+    linear-gradient(to left, var(--surface), transparent) 100% 0 / 34px 100% no-repeat local,
+    radial-gradient(farthest-side at 0 50%, rgba(180, 194, 214, 0.22), transparent) 0 0 / 18px 100% no-repeat scroll,
+    radial-gradient(farthest-side at 100% 50%, rgba(180, 194, 214, 0.22), transparent) 100% 0 / 18px 100% no-repeat scroll;
+}
+
+[data-theme="light"] .ot-table-wrap {
+  background:
+    linear-gradient(to right, var(--surface), transparent) 0 0 / 34px 100% no-repeat local,
+    linear-gradient(to left, var(--surface), transparent) 100% 0 / 34px 100% no-repeat local,
+    radial-gradient(farthest-side at 0 50%, rgba(16, 28, 48, 0.16), transparent) 0 0 / 16px 100% no-repeat scroll,
+    radial-gradient(farthest-side at 100% 50%, rgba(16, 28, 48, 0.16), transparent) 100% 0 / 16px 100% no-repeat scroll;
+}
+
+.ot-table {
+  width: 100%;
+  font-size: var(--step-small);
+}
+
+.ot-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--surface);
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--line-strong);
+  white-space: nowrap;
+  font-weight: 500;
+}
+
+.ot-table tbody td {
+  padding: 13px 14px;
+  border-bottom: 1px solid var(--line);
+  color: var(--text-secondary);
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.ot-table.is-compact tbody td { padding: 9px 12px; }
+
+.ot-table tbody tr:last-child td { border-bottom: 0; }
+
+.ot-table tbody tr.is-interactive { cursor: pointer; }
+
+.ot-table tbody tr.is-interactive:hover td,
+.ot-table tbody tr.is-interactive:focus-visible td {
+  background: var(--surface-hover);
+  color: var(--text);
+}
+
+.ot-table tbody tr.is-interactive:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: -2px;
+}
+
+/* ---------------- Status / side ----------------------------------------- */
+.ot-status { display: inline-flex; align-items: center; gap: 7px; }
+
+.ot-status__glyph {
+  width: 7px;
+  height: 7px;
+  flex: none;
+  background: var(--text-faint);
+  /* Square, rotated: a small diamond that echoes the octagon geometry. */
+  transform: rotate(45deg);
+}
+
+.ot-status__text { font-size: 0.72rem; letter-spacing: 0.1em; color: var(--text-secondary); }
+
+.ot-status--pos .ot-status__glyph { background: var(--pos); }
+.ot-status--neg .ot-status__glyph { background: var(--neg); }
+.ot-status--reserved .ot-status__glyph { background: var(--reserved); }
+.ot-status--neutral .ot-status__glyph { background: var(--steel-300); }
+
+.ot-status--sm .ot-status__text { font-size: 0.68rem; }
+
+.ot-side { display: inline-flex; align-items: center; gap: 6px; font-size: 0.76rem; letter-spacing: 0.08em; }
+.ot-side.is-buy { color: var(--pos); }
+.ot-side.is-sell { color: var(--neg); }
+.ot-side__arrow { font-size: 0.9rem; line-height: 1; }
+
+/* ---------------- Metric ------------------------------------------------ */
+.ot-metric { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.ot-metric.is-end { align-items: flex-end; text-align: right; }
+
+.ot-metric__value {
+  font-size: 1.28rem;
+  font-weight: 500;
+  color: var(--text);
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+.ot-metric--lg .ot-metric__value { font-size: clamp(1.6rem, 1.2rem + 1.4vw, 2.2rem); }
+.ot-metric--sm .ot-metric__value { font-size: 1.02rem; }
+
+.ot-metric__value--pos { color: var(--pos); }
+.ot-metric__value--neg { color: var(--neg); }
+.ot-metric__value--reserved { color: var(--reserved); }
+
+.ot-metric__sub { font-size: 0.76rem; color: var(--text-faint); }
+
+/* ---------------- Dialog ------------------------------------------------ */
+.ot-dialog-layer {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-overlay);
+  display: grid;
+  place-items: center;
+  padding: var(--space-4);
+}
+
+.ot-dialog__backdrop {
+  position: absolute;
+  inset: 0;
+  background: color-mix(in srgb, var(--ink-950) 78%, transparent);
+  /* A single static backdrop blur: never animated, so it does not cost
+     frames during the open transition. */
+  backdrop-filter: blur(3px);
+}
+
+.ot-dialog {
+  position: relative;
+  width: 100%;
+  max-height: min(86vh, 780px);
+  display: flex;
+  flex-direction: column;
+  background: var(--surface-raised);
+  border: 1px solid var(--line-strong);
+  box-shadow: var(--shadow-pop);
+}
+
+.ot-dialog--sm { max-width: 420px; }
+.ot-dialog--md { max-width: 560px; }
+.ot-dialog--lg { max-width: 780px; }
+
+.ot-dialog__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: 20px 22px 16px;
+  border-bottom: 1px solid var(--line);
+}
+
+.ot-dialog__desc {
+  margin-top: 6px;
+  font-size: var(--step-small);
+  color: var(--text-muted);
+  max-width: 56ch;
+}
+
+.ot-dialog__close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  flex: none;
+  color: var(--text-muted);
+  border: 1px solid var(--line);
+}
+
+.ot-dialog__close:hover { color: var(--text); border-color: var(--line-strong); }
+
+.ot-dialog__body { padding: 20px 22px; overflow-y: auto; }
+
+.ot-dialog__foot {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  padding: 16px 22px;
+  border-top: 1px solid var(--line);
+  flex-wrap: wrap;
+}
+
+@media (max-width: 519px) {
+  .ot-dialog__foot { flex-direction: column-reverse; }
+  .ot-dialog__foot > * { width: 100%; }
+}
+
+/* ---------------- Toasts ------------------------------------------------ */
+.ot-toaster {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  z-index: var(--z-toast);
+  padding: var(--space-4);
+  pointer-events: none;
+  max-width: min(420px, 100vw);
+  width: 100%;
+}
+
+.ot-toaster__stack { display: flex; flex-direction: column; gap: 10px; align-items: stretch; }
+
+.ot-toast {
+  pointer-events: auto;
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  padding: 13px 14px;
+  background: var(--surface-raised);
+  border: 1px solid var(--line-strong);
+  box-shadow: var(--shadow-pop);
+}
+
+.ot-toast__icon { flex: none; margin-top: 2px; }
+.ot-toast--success .ot-toast__icon { color: var(--pos); }
+.ot-toast--error .ot-toast__icon { color: var(--neg); }
+.ot-toast--info .ot-toast__icon { color: var(--accent); }
+
+.ot-toast__text { flex: 1; min-width: 0; }
+
+.ot-toast__title { font-size: 0.9rem; font-weight: 560; color: var(--text); }
+
+.ot-toast__desc {
+  margin-top: 3px;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  overflow-wrap: anywhere;
+}
+
+.ot-toast__close { color: var(--text-faint); flex: none; padding: 2px; }
+.ot-toast__close:hover { color: var(--text); }

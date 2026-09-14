@@ -1,0 +1,203 @@
+/*
+  OctaTrade design tokens.
+  ------------------------------------------------------------------
+  Identity: "the eight-sided market". The regular octagon is the brand
+  geometry; structure is expressed with hairline rules and column offsets
+  rather than repeated rounded cards. Two voices only:
+    - display  : tight grotesk for editorial statements
+    - mono     : tabular terminal voice for labels, symbols and numerals
+
+  Colour is a cold institutional set: deep navy -> charcoal -> steel ->
+  cyan, with silver/off-white for text and a strictly rationed violet used
+  only to mark "reserved"/pending states. No dark green anywhere; gain is
+  expressed as a bright mint-teal that belongs to the cyan family.
+*/
+
+:root {
+  /* ---- Core ramp (dark, the product's native environment) ---- */
+  --ink-950: #05080F;
+  --ink-900: #070B14;
+  --ink-850: #090E19;
+  --ink-800: #0C121F;
+  --ink-750: #101828;
+  --ink-700: #141D2F;
+  --ink-650: #18223A;
+  --ink-600: #1E2A44;
+
+  --steel-600: #24334F;
+  --steel-500: #2E415F;
+  --steel-400: #3F567A;
+  --steel-300: #5C7399;
+
+  --slate-400: #6E84A6;
+  --slate-300: #8B9DBB;
+  --silver-200: #B4C2D6;
+  --silver-100: #D7E0EC;
+  --white: #F2F6FB;
+
+  --paper-100: #F5F7FA;
+  --paper-200: #EBEFF5;
+  --paper-300: #DDE3EC;
+
+  /* ---- Accent ---- */
+  --cyan-300: #6FE7F5;
+  --cyan-400: #33D2E6;
+  --cyan-500: #14A9C6;
+  --cyan-600: #0B7F98;
+
+  --violet-300: #A99BF5;
+  --violet-400: #8878EE;
+  --violet-500: #6A57D8;
+
+  /* ---- Market semantics ---- */
+  --pos-400: #37D9B4;
+  --pos-500: #1FB395;
+  --neg-400: #FF6F61;
+  --neg-500: #E24E40;
+  --warn-400: #F2B347;
+
+  /* ---- Semantic surface roles (dark default) ---- */
+  --bg: var(--ink-900);
+  --bg-deep: var(--ink-950);
+  --surface: var(--ink-850);
+  --surface-raised: var(--ink-800);
+  --surface-inset: var(--ink-950);
+  --surface-hover: var(--ink-750);
+
+  --line: rgba(180, 194, 214, 0.11);
+  --line-strong: rgba(180, 194, 214, 0.2);
+  --line-accent: rgba(51, 210, 230, 0.4);
+
+  --text: var(--white);
+  --text-secondary: var(--silver-200);
+  --text-muted: var(--slate-300);
+  --text-faint: var(--slate-400);
+  --text-on-accent: #04121A;
+
+  --accent: var(--cyan-400);
+  --accent-hover: var(--cyan-300);
+  --accent-quiet: rgba(51, 210, 230, 0.12);
+  --reserved: var(--violet-400);
+  --reserved-quiet: rgba(136, 120, 238, 0.14);
+
+  --pos: var(--pos-400);
+  --neg: var(--neg-400);
+  --warn: var(--warn-400);
+
+  --focus-ring: var(--cyan-300);
+
+  /* ---- Type ---- */
+  /* Self-hosted variable faces, each with a metric-matched fallback so the
+     swap-in does not reflow. See fonts.css. */
+  --font-display: "Inter Tight", "Inter Tight Fallback", -apple-system,
+    BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-sans: "Inter Tight", "Inter Tight Fallback", -apple-system,
+    BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "JetBrains Mono", "JetBrains Mono Fallback", ui-monospace,
+    "SF Mono", SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+
+  /* Fluid display steps. clamp() keeps the editorial scale intact from 390px
+     to large desktop without a single media query per heading. */
+  --step-display: clamp(2.35rem, 1.5rem + 3.9vw, 4.9rem);
+  --step-h1: clamp(2rem, 1.25rem + 3vw, 3.5rem);
+  --step-h2: clamp(1.55rem, 1.1rem + 1.9vw, 2.45rem);
+  --step-h3: clamp(1.22rem, 0.96rem + 1.05vw, 1.6rem);
+  --step-h4: clamp(1.02rem, 0.94rem + 0.34vw, 1.16rem);
+  --step-body: clamp(0.95rem, 0.92rem + 0.18vw, 1.05rem);
+  --step-small: 0.86rem;
+  --step-label: 0.68rem;
+
+  --tracking-display: -0.022em;
+  --tracking-tight: -0.014em;
+  --tracking-label: 0.16em;
+
+  /* ---- Space / rhythm ---- */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+  --space-9: 96px;
+  --space-10: 136px;
+
+  --shell-pad: clamp(20px, 4.4vw, 72px);
+  --rail-w: 68px;
+  --sidebar-w: 248px;
+  --topbar-h: 60px;
+  --max-w: 1560px;
+
+  /* Octagon corner cut used across panels, buttons and the brand mark. */
+  --cut: 10px;
+  --cut-sm: 6px;
+  --cut-lg: 18px;
+
+  --radius-sm: 3px;
+  --radius: 4px;
+
+  --shadow-panel: 0 1px 0 rgba(255, 255, 255, 0.03) inset,
+    0 18px 48px -28px rgba(0, 0, 0, 0.9);
+  --shadow-pop: 0 24px 70px -24px rgba(2, 6, 14, 0.86);
+
+  /* ---- Motion ---- */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.7, 0, 0.24, 1);
+  --dur-fast: 140ms;
+  --dur: 240ms;
+  --dur-slow: 520ms;
+
+  --z-scene: 0;
+  --z-content: 10;
+  --z-rail: 40;
+  --z-nav: 60;
+  --z-overlay: 80;
+  --z-toast: 90;
+}
+
+/* ------------------------------------------------------------------
+   Light theme. The product inverts to a cold "paper" set used by
+   institutional terminals for daylight desks: off-white ground, navy ink,
+   the same cyan accent darkened for AA contrast on light surfaces.
+   ------------------------------------------------------------------ */
+/*
+  Scoped to [data-theme="light"] rather than :root[data-theme="light"] on
+  purpose. Custom properties inherit, so declaring the light palette on ANY
+  element re-themes that subtree — which is how the landing page's paper-toned
+  "paper trading" band inverts mid-page without any component knowing about it.
+*/
+[data-theme="light"] {
+  --bg: var(--paper-100);
+  --bg-deep: var(--paper-200);
+  --surface: #FFFFFF;
+  --surface-raised: #FFFFFF;
+  --surface-inset: var(--paper-200);
+  --surface-hover: var(--paper-200);
+
+  --line: rgba(16, 28, 48, 0.12);
+  --line-strong: rgba(16, 28, 48, 0.22);
+  --line-accent: rgba(11, 127, 152, 0.45);
+
+  --text: #0A1424;
+  --text-secondary: #26374F;
+  --text-muted: #4C5F7C;
+  --text-faint: #6B7C97;
+  --text-on-accent: #FFFFFF;
+
+  --accent: var(--cyan-600);
+  --accent-hover: var(--cyan-500);
+  --accent-quiet: rgba(11, 127, 152, 0.1);
+  --reserved: var(--violet-500);
+  --reserved-quiet: rgba(106, 87, 216, 0.1);
+
+  --pos: var(--pos-500);
+  --neg: var(--neg-500);
+  --warn: #B37411;
+
+  --focus-ring: var(--cyan-600);
+
+  --shadow-panel: 0 1px 2px rgba(16, 28, 48, 0.06),
+    0 12px 32px -20px rgba(16, 28, 48, 0.28);
+  --shadow-pop: 0 24px 60px -28px rgba(16, 28, 48, 0.36);
+}

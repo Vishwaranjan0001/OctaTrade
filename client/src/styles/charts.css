@@ -1,0 +1,104 @@
+/* Chart surfaces: TradingView candles, Recharts allocation and series. */
+
+.ot-chart { margin: 0; width: 100%; min-width: 0; }
+
+.ot-chart__canvas {
+  width: 100%;
+  /* The canvas must never push the page wider than the viewport. */
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.ot-chart__caption {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 10px;
+  margin-top: 8px;
+  border-top: 1px solid var(--line);
+  flex-wrap: wrap;
+}
+
+/* TradingView attribution — required by the Lightweight Charts licence. */
+.ot-chart__attribution {
+  font-family: var(--font-mono);
+  font-size: var(--step-label);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.ot-chart__attribution:hover { color: var(--accent); text-decoration: underline; }
+
+/* Tooltips are rendered by us, not by the library defaults. */
+.ot-chart-tip {
+  background: var(--surface-raised);
+  border: 1px solid var(--line-strong);
+  box-shadow: var(--shadow-pop);
+  padding: 10px 12px;
+  min-width: 168px;
+}
+
+.ot-chart-tip__title {
+  font-size: 0.78rem;
+  color: var(--text);
+  margin-bottom: 7px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--line);
+}
+
+.ot-chart-tip__row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 14px;
+  font-size: 0.76rem;
+  color: var(--text-muted);
+  padding-block: 2px;
+}
+
+.ot-chart-tip__row .ot-num { color: var(--text); }
+
+/* Recharts focus outlines on sectors are noisy; keep keyboard focus visible
+   on the legend rows instead, which carry the same information. */
+.recharts-wrapper:focus,
+.recharts-surface:focus { outline: none; }
+
+/* ---------------- Allocation -------------------------------------------- */
+.ot-alloc { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+
+.ot-alloc__chart { width: 100%; min-width: 0; }
+
+.ot-alloc__legend { display: flex; flex-direction: column; }
+
+.ot-alloc__legend-row {
+  display: grid;
+  grid-template-columns: 10px minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--line);
+  font-size: 0.8rem;
+}
+
+.ot-alloc__legend-row:last-child { border-bottom: 0; }
+
+.ot-alloc__swatch { width: 10px; height: 10px; transform: rotate(45deg); flex: none; }
+
+.ot-alloc__legend-symbol {
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ot-alloc__legend-share { color: var(--text-secondary); min-width: 56px; text-align: right; }
+.ot-alloc__legend-value { color: var(--text-muted); min-width: 92px; text-align: right; }
+
+@media (max-width: 519px) {
+  .ot-alloc__legend-row { grid-template-columns: 10px minmax(0, 1fr) auto; }
+  .ot-alloc__legend-value { display: none; }
+}
+
+.ot-alloc__basis { color: var(--text-faint); }
