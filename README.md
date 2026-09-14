@@ -15,33 +15,48 @@ client/   Vite + React frontend
 docs/     Architecture decisions and learning notes
 ```
 
-## Running it
+## Running it locally
 
-The backend needs a local MongoDB on `mongodb://127.0.0.1:27017/octatrade` and a
-`.env` in `server/` containing `JWT_SECRET` and `JWT_EXPIRES_IN`.
+**Prerequisites:** Node 20+ and a local MongoDB listening on
+`mongodb://127.0.0.1:27017`.
+
+Create `server/.env`:
+
+```
+JWT_SECRET=replace-with-any-long-random-string
+JWT_EXPIRES_IN=7d
+```
+
+Then, from the repository root:
 
 ```bash
-# terminal 1 — API on :3000
-cd server
-npm install
-npm start
+npm run setup     # installs server/ and client/ dependencies
+npm run dev       # API on :3000 and client on :5173, in one terminal
+```
 
-# terminal 2 — client on :5173
-cd client
-npm install
-npm run dev
+Open <http://localhost:5173>. Ctrl-C stops both.
+
+To run them separately instead:
+
+```bash
+npm run server    # or: cd server && npm start
+npm run client    # or: cd client && npm run dev
 ```
 
 The dev server proxies `/api` to `http://127.0.0.1:3000`, so the client calls
-same-origin relative URLs and the backend needs no CORS layer. To point a built
-client at a different API origin, set `VITE_API_BASE_URL` (see
-`client/.env.example`).
+same-origin relative URLs and the backend needs no CORS layer. Point the client
+at a different API with `VITE_PROXY_TARGET` (dev) or `VITE_API_BASE_URL` (a
+built client) — see `client/.env.example`.
+
+### Production build
 
 ```bash
-cd client
-npm run build     # production build into client/dist
-npm run preview   # serve the build locally
+npm run build     # outputs client/dist
+npm run preview   # serves that build on :4173, proxying /api the same way
 ```
+
+When deploying the built client, the host must serve `index.html` for unmatched
+paths so client-side routes like `/dashboard` resolve on a hard refresh.
 
 ## API
 

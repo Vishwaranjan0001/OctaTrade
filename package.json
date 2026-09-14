@@ -1,0 +1,14 @@
+{
+  "name": "octatrade",
+  "private": true,
+  "version": "1.0.0",
+  "description": "OctaTrade — a paper-trading simulator. Backend in server/, frontend in client/.",
+  "scripts": {
+    "setup": "npm --prefix server install && npm --prefix client install",
+    "server": "npm --prefix server start",
+    "client": "npm --prefix client run dev",
+    "build": "npm --prefix client run build",
+    "preview": "npm --prefix client run preview",
+    "dev": "node scripts/dev.js"
+  }
+}
