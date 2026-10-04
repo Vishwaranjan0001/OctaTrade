@@ -11,6 +11,7 @@ import { Safety } from "../../components/marketing/Safety.jsx";
 import { FinalCta } from "../../components/marketing/FinalCta.jsx";
 import { Footer } from "../../components/marketing/Footer.jsx";
 import { ErrorBoundary } from "../../components/ErrorBoundary.jsx";
+import { PointerGlow } from "../../components/effects/PointerGlow.jsx";
 
 /*
   Landing page composition and its intended reading rhythm.
@@ -42,6 +43,8 @@ export default function Landing() {
 
   return (
     <>
+      {/* Pointer trail. Renders nothing under reduced motion or on touch. */}
+      <PointerGlow />
       <Nav />
       <main id="main">
         {/* Each section is isolated: a fault in one (a third-party carousel, a

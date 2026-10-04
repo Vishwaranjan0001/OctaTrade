@@ -8,6 +8,7 @@ import { AlertCircle, ArrowLeft, ArrowRight } from "lucide-react";
 import { Button } from "../../components/ui/Button.jsx";
 import { PasswordField, TextField } from "../../components/ui/Field.jsx";
 import { AuthAside } from "./AuthAside.jsx";
+import { PointerGlow } from "../../components/effects/PointerGlow.jsx";
 import { useRegisterMutation } from "../../hooks/queries.js";
 import { describeError } from "../../components/ui/States.jsx";
 import { toast } from "../../components/ui/Toast.jsx";
@@ -94,6 +95,7 @@ export default function Register() {
 
   return (
     <div className="ot-auth">
+      <PointerGlow />
       <main className="ot-auth__form-side" id="main">
         <div className="ot-auth__form-inner">
           <Link to="/" className="ot-auth__back">
