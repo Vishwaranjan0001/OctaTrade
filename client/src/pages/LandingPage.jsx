@@ -19,6 +19,8 @@ import ParticleText from "@/components/ParticleText";
 import DepthCarousel from "@/components/DepthCarousel";
 import CardSwap, { Card } from "@/components/CardSwap";
 import InfiniteMenu from "@/components/InfiniteMenu";
+import ScrollExpand from "@/components/ScrollExpand";
+import FoldText from "@/components/FoldText";
 import { createWorkspaceItems } from "@/lib/workspace-tiles";
 
 const capabilityCards = [
@@ -298,6 +300,34 @@ export function LandingPage() {
             </div>
           </div>
 
+          <section className="landing-expand" aria-label="Live market context">
+            {/* Curtains + mediaZoom 1: the playing video is never re-clipped or rescaled while
+                scrolling (both measured as stutter); smoothing 0 because Lenis already eases scroll. */}
+            <ScrollExpand
+              className="landing-scroll-expand"
+              src="/videos/bullish-ascent-dim.mp4"
+              mediaType="video"
+              title="Watch the market move."
+              scrollHint="Scroll"
+              titleMode="grow"
+              startWidth={compactLayout ? 82 : 44}
+              startHeight={compactLayout ? 42 : 56}
+              revealMode="curtains"
+              curtainColor="#000"
+              mediaZoom={1}
+              scrollDistance={1.1}
+              holdDistance={0.35}
+              smoothing={0}
+              overlayScrim={0.6}
+              restDim={0.88}
+              useWindowScroll
+            >
+              <p className="expand-kicker">LIVE MARKET CONTEXT</p>
+              <h2>Every decision,<br />in full view.</h2>
+              <p className="expand-copy">Quotes, orders and holdings move together, so you see the whole picture before you commit, with paper money only.</p>
+            </ScrollExpand>
+          </section>
+
           <div ref={afterHeroRef} className="landing-after-hero">
             <div className="after-hero-video-stage" aria-hidden="true">
               <video
@@ -316,16 +346,39 @@ export function LandingPage() {
               <div className="after-section-shell">
                 <p className="after-section-index">01 / THE PRACTICE FLOOR</p>
                 <div className="after-intro-grid">
-                  <motion.h2
-                    id="platform-heading"
-                    initial={pageMotionEnabled ? { opacity: 0, y: 55 } : false}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={revealViewport}
-                  >
-                    Read the market.<br />
-                    Test the decision.<br />
-                    <span>Keep the lesson.</span>
-                  </motion.h2>
+                  <h2 id="platform-heading">
+                    {pageMotionEnabled ? (
+                      [
+                        ["Read the market.", "#f2efe8"],
+                        ["Test the decision.", "#f2efe8"],
+                        ["Keep the lesson.", "#9d988f"]
+                      ].map(([line, color], lineIndex) => (
+                        <FoldText
+                          key={line}
+                          className="fold-line"
+                          text={line}
+                          splitBy="word"
+                          hinge="top"
+                          trigger="scroll"
+                          delay={lineIndex * 0.3}
+                          duration={0.8}
+                          stagger={0.09}
+                          ease="power3.out"
+                          perspective={800}
+                          creaseShading={0.5}
+                          fontSize="inherit"
+                          fontWeight="inherit"
+                          color={color}
+                        />
+                      ))
+                    ) : (
+                      <>
+                        Read the market.<br />
+                        Test the decision.<br />
+                        <span>Keep the lesson.</span>
+                      </>
+                    )}
+                  </h2>
                   <div className="after-intro-copy">
                     <motion.p
                       initial={pageMotionEnabled ? { opacity: 0, y: 26 } : false}
@@ -439,10 +492,10 @@ export function LandingPage() {
                         height={compactLayout ? 340 : 380}
                         cardDistance={compactLayout ? 28 : 60}
                         verticalDistance={compactLayout ? 34 : 64}
-                        delay={2000}
+                        delay={1000}
+                        duration={0.5}
                         skewAmount={4}
                         easing="linear"
-                        pauseOnHover
                       >
                         {workflowSteps.map(([index, label, title, copy, tools]) => (
                           <Card key={label} customClass="workflow-swap-card">

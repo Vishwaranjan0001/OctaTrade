@@ -9,6 +9,9 @@ import './CardSwap.css';
 // - Swapping only runs while the stack is on screen (IntersectionObserver), so the first
 //   swap is seen and nothing animates while scrolled away. Works with `pauseOnHover`.
 // - `className` is forwarded to the container.
+// - `duration` sets the per-move time for the non-elastic easing (default 0.8s as before).
+// - A swap that is still running when the next one fires is jumped to its end first, so the
+//   card order is always current (short delays no longer pick the same front card twice).
 
 export const Card = forwardRef(({ customClass, ...rest }, ref) => (
   <div ref={ref} {...rest} className={`card-swap-card ${customClass ?? ''} ${rest.className ?? ''}`.trim()} />
@@ -44,6 +47,7 @@ const CardSwap = ({
   onCardClick,
   skewAmount = 6,
   easing = 'elastic',
+  duration = 0.8,
   className = '',
   children
 }) => {
@@ -59,9 +63,9 @@ const CardSwap = ({
         }
       : {
           ease: 'power1.inOut',
-          durDrop: 0.8,
-          durMove: 0.8,
-          durReturn: 0.8,
+          durDrop: duration,
+          durMove: duration,
+          durReturn: duration,
           promoteOverlap: 0.45,
           returnDelay: 0.2
         };
@@ -85,6 +89,9 @@ const CardSwap = ({
 
     const swap = () => {
       if (order.current.length < 2) return;
+
+      // Finish an unfinished swap first; its final call updates order.current.
+      if (tlRef.current && tlRef.current.isActive()) tlRef.current.progress(1);
 
       const [front, ...rest] = order.current;
       const elFront = refs[front].current;
@@ -191,7 +198,7 @@ const CardSwap = ({
       tlRef.current?.kill();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cardDistance, verticalDistance, delay, pauseOnHover, skewAmount, easing]);
+  }, [cardDistance, verticalDistance, delay, pauseOnHover, skewAmount, easing, duration]);
 
   const rendered = childArr.map((child, i) =>
     isValidElement(child)
