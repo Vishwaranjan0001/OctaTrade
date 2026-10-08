@@ -189,37 +189,54 @@ export async function updateHoldingAfterSell(
   symbol,
   quantity
 ) {
-  const holding = await Holding.findOne({
-    userId: userId,
-    symbol: symbol
-  });
+  const holding = await Holding.findOneAndUpdate(
+    {
+      userId: userId,
+      symbol: symbol,
+      quantity: {
+        $gte: quantity
+      }
+    },
+    {
+      $inc: {
+        quantity: -quantity
+      }
+    },
+    {
+      returnDocument: "after"
+    }
+  );
 
   if (!holding) {
-    return {
-      success: false,
-      reason: "HOLDING_NOT_FOUND"
-    };
-  }
+    const existingHolding = await Holding.findOne({
+      userId: userId,
+      symbol: symbol
+    });
 
-  if (holding.quantity < quantity) {
+    if (!existingHolding) {
+      return {
+        success: false,
+        reason: "HOLDING_NOT_FOUND"
+      };
+    }
+
     return {
       success: false,
       reason: "INSUFFICIENT_HOLDING"
     };
   }
 
-  holding.quantity -= quantity;
-
   if (holding.quantity === 0) {
-    await holding.deleteOne();
+    await Holding.deleteOne({
+      _id: holding._id,
+      quantity: 0
+    });
 
     return {
       success: true,
       holding: null
     };
   }
-
-  await holding.save();
 
   return {
     success: true,
