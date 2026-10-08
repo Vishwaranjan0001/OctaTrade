@@ -5,6 +5,7 @@ import {
   getOrdersByUserId,
   getOrderByIdForUser
 } from "../services/orderServices.js";
+import { acquireLock, releaseLock } from "../concurrency/userLock.js";
 
 export async function placeOrder(req, res) {
   try {
@@ -46,20 +47,24 @@ export async function placeOrder(req, res) {
       });
     }
 
+        const lockToken = await acquireLock(req.userId);
+
+    if (!lockToken) {
+      return res.status(409).json({
+        message: "Another order is still being processed. Please try again."
+      });
+    }
+
     let result;
 
-    if (normalizedSide === "BUY") {
-      result = await executeBuyOrder(
-        req.userId,
-        normalizedSymbol,
-        quantity
-      );
-    } else {
-      result = await executeSellOrder(
-        req.userId,
-        normalizedSymbol,
-        quantity
-      );
+    try {
+      if (normalizedSide === "BUY") {
+        result = await executeBuyOrder(req.userId, normalizedSymbol, quantity);
+      } else {
+        result = await executeSellOrder(req.userId, normalizedSymbol, quantity);
+      }
+    } finally {
+      await releaseLock(req.userId, lockToken);
     }
 
     if (!result.success) {
