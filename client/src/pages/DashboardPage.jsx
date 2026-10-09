@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link } from "react-router";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "motion/react";
@@ -21,6 +22,8 @@ import { PortfolioChart } from "@/components/charts";
 import { Badge, Button, Card, EmptyState, MetricCard, PageHeader, SectionHeader, Skeleton } from "@/components/ui";
 
 export function DashboardPage() {
+  const [cardsPaused, setCardsPaused] = useState(false);
+  const toggleCardMotion = () => setCardsPaused((paused) => !paused);
   const token = useAppStore((state) => state.token);
   const user = useAppStore((state) => state.user);
   const walletQuery = useQuery({
@@ -41,6 +44,12 @@ export function DashboardPage() {
     enabled: Boolean(token),
     staleTime: 20_000
   });
+  const historyQuery = useQuery({
+    queryKey: ["portfolio", "history", token],
+    queryFn: () => api.portfolioHistory(token),
+    enabled: Boolean(token),
+    staleTime: 60_000
+  });
   const wallet = walletQuery.data;
   const holdings = portfolioQuery.data?.holdings ?? [];
   const orders = ordersQuery.data?.orders ?? [];
@@ -50,6 +59,12 @@ export function DashboardPage() {
   const profitLossPaise = holdings.reduce((sum, holding) => sum + holding.profitLossPaise, 0);
   const totalValuePaise = holdingsValuePaise + (wallet?.availableBalancePaise ?? 0);
   const totalReturn = investedPaise ? profitLossPaise / investedPaise * 100 : 0;
+  const metrics = [
+    { label: "Portfolio value", value: formatCurrencyFromPaise(totalValuePaise), delta: "Current holdings + cash", icon: <BriefcaseBusiness className="size-4" /> },
+    { label: "Total return", value: formatCurrencyFromPaise(profitLossPaise), delta: formatPercent(totalReturn), positive: profitLossPaise >= 0, icon: <TrendingUp className="size-4" />, footer: <span className="text-xs text-[var(--text-muted)]">Unrealized P&amp;L</span> },
+    { label: "Invested amount", value: formatCurrencyFromPaise(investedPaise), delta: `${holdings.length} active positions`, icon: <Landmark className="size-4" />, footer: <span className="text-xs text-[var(--text-muted)]">Market value</span> },
+    { label: "Buying power", value: formatCurrencyFromPaise(wallet?.availableBalancePaise ?? 0), delta: "Available balance", icon: <WalletCards className="size-4" /> }
+  ];
 
   if (isLoading) {
     return <div className="space-y-6">
@@ -72,24 +87,25 @@ export function DashboardPage() {
       </>}
     />
 
-    <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
-      <MetricCard label="Portfolio value" value={formatCurrencyFromPaise(totalValuePaise)} delta="Current holdings + cash" icon={<BriefcaseBusiness className="size-4" />} />
-      <MetricCard label="Total return" value={formatCurrencyFromPaise(profitLossPaise)} delta={formatPercent(totalReturn)} positive={profitLossPaise >= 0} icon={<TrendingUp className="size-4" />} footer={<span className="text-xs text-[var(--text-muted)]">Unrealized P&amp;L</span>} delay={0.05} />
-      <MetricCard label="Invested amount" value={formatCurrencyFromPaise(investedPaise)} delta={`${holdings.length} active positions`} icon={<Landmark className="size-4" />} footer={<span className="text-xs text-[var(--text-muted)]">Market value</span>} delay={0.1} />
-      <MetricCard label="Buying power" value={formatCurrencyFromPaise(wallet?.availableBalancePaise ?? 0)} delta="Available balance" icon={<WalletCards className="size-4" />} delay={0.15} />
-    </div>
+    <section aria-label="Account overview" className="metric-carousel" data-paused={cardsPaused}>
+      <div className="metric-carousel-track" onClick={toggleCardMotion} title={cardsPaused ? "Click a card to resume" : "Click a card to pause"}>
+        {[0, 1].map((copy) => <div key={copy} className="metric-carousel-group" aria-hidden={copy === 1 ? true : undefined}>
+          {metrics.map((metric) => <MetricCard key={metric.label} animated {...metric} />)}
+        </div>)}
+      </div>
+    </section>
 
     <div className="grid gap-5 xl:grid-cols-[minmax(0,1.65fr)_minmax(320px,.75fr)]">
       <Card className="overflow-hidden p-5 md:p-6">
         <div>
           <div className="flex items-center gap-2">
             <h2 className="font-semibold tracking-tight">Portfolio performance</h2>
-            <Badge tone="info">History unavailable</Badge>
+            <Badge tone="info">Last 1 month</Badge>
           </div>
           <p className="number-tabular mt-3 text-3xl font-semibold tracking-[-0.045em]">{formatCurrencyFromPaise(totalValuePaise)}</p>
-          <p className="mt-2 text-xs text-[var(--text-muted)]">Portfolio snapshots are not recorded by the backend yet.</p>
+          <p className="mt-2 text-xs text-[var(--text-muted)]">Value of your current holdings vs NIFTY 50 (dashed)</p>
         </div>
-        <PortfolioChart data={[]} />
+        <PortfolioChart data={historyQuery.data?.history ?? []} />
       </Card>
 
       <Card className="p-5 md:p-6">

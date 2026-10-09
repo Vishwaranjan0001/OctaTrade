@@ -5,6 +5,7 @@ import * as Tooltip from "@radix-ui/react-tooltip";
 import { Toaster } from "sonner";
 import { AppShell } from "@/components/shell";
 import { useAppStore } from "@/store/app-store";
+import { useOrderUpdates } from "@/hooks/use-order-updates";
 
 const ActivityPage = lazy(() => import("@/pages/ActivityPage").then((module) => ({ default: module.ActivityPage })));
 const AnalyticsPage = lazy(() => import("@/pages/AnalyticsPage").then((module) => ({ default: module.AnalyticsPage })));
@@ -43,6 +44,8 @@ function ThemeSync() {
 
 function ProtectedLayout() {
   const token = useAppStore((state) => state.token);
+
+  useOrderUpdates();
 
   if (!token) {
     return <Navigate to="/login" replace />;

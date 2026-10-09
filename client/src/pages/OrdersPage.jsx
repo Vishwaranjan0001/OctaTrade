@@ -36,7 +36,7 @@ export function OrdersPage() {
         activeTab === "All orders" ||
         (activeTab === "Executed" && order.status === "COMPLETED") ||
         (activeTab === "Rejected" && order.status === "REJECTED") ||
-        (activeTab === "Open orders" && order.status === "PENDING");
+        (activeTab === "Open orders" && (order.status === "PENDING" || order.status === "PROCESSING"));
 
       return matchesQuery && matchesSide && matchesStatus;
     });

@@ -22,6 +22,13 @@ export function AnalyticsPage() {
     staleTime: 30_000
   });
 
+  const historyQuery = useQuery({
+    queryKey: ["portfolio", "history", token],
+    queryFn: () => api.portfolioHistory(token),
+    enabled: Boolean(token),
+    staleTime: 60_000
+  });
+
   const holdings = portfolioQuery.data?.holdings ?? [];
   const totals = useMemo(() => {
     const invested = holdings.reduce((sum, item) => sum + item.investedValuePaise, 0);
@@ -67,8 +74,8 @@ export function AnalyticsPage() {
 
       <div className="grid gap-5 xl:grid-cols-[1.5fr_.72fr]">
         <Card className="p-5 md:p-6">
-          <SectionHeader title="Equity curve" description="Historical portfolio value in rupees" action={<Badge tone="info">No stored history</Badge>} />
-          <PortfolioChart data={[]} />
+          <SectionHeader title="Equity curve" description="Value of current holdings in rupees vs NIFTY 50 (dashed)" action={<Badge tone="info">Last 1 month</Badge>} />
+          <PortfolioChart data={historyQuery.data?.history ?? []} />
         </Card>
 
         <Card className="p-5 md:p-6">
