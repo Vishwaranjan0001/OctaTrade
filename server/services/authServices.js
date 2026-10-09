@@ -1,19 +1,43 @@
 import bcrypt from "bcryptjs";
+import mongoose from "mongoose";
 import {User} from "../models/User.js";
 import jwt from "jsonwebtoken";
 import { createWallet } from "./walletServices.js";
 
 export async function registerUser({name,email,password}){
     const passwordHash=await bcrypt.hash(password,12);
-    const user=await User.create(
-        {
-            name: name,
-            email: email,
-            passwordHash: passwordHash
+
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
+    try {
+        const createdUsers = await User.create(
+            [
+                {
+                    name: name,
+                    email: email,
+                    passwordHash: passwordHash
+                }
+            ],
+            { session: session }
+        );
+
+        const user = createdUsers[0];
+
+        await createWallet(user._id, session);
+
+        await session.commitTransaction();
+
+        return user;
+    } catch (error) {
+        if (session.inTransaction()) {
+            await session.abortTransaction();
         }
-    )
-    await createWallet(user._id);
-      return user;
+
+        throw error;
+    } finally {
+        await session.endSession();
+    }
 }
 
 export function createToken(userId) {

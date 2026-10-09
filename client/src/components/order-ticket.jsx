@@ -18,6 +18,7 @@ const ticketSchema = z.object({
 function OrderTicket({ symbol, compact = false }) {
   const [side, setSide] = useState("BUY");
   const [confirmationOpen, setConfirmationOpen] = useState(false);
+  const [idempotencyKey, setIdempotencyKey] = useState(() => crypto.randomUUID());
   const token = useAppStore((state) => state.token);
   const queryClient = useQueryClient();
   const form = useForm({
@@ -53,9 +54,10 @@ function OrderTicket({ symbol, compact = false }) {
         symbol,
         side,
         quantity: values.quantity
-      });
+      }, idempotencyKey);
     },
     onSuccess: () => {
+      setIdempotencyKey(crypto.randomUUID());
       setConfirmationOpen(true);
       void queryClient.invalidateQueries({ queryKey: ["wallet"] });
       void queryClient.invalidateQueries({ queryKey: ["portfolio"] });
@@ -196,14 +198,14 @@ function OrderTicket({ symbol, compact = false }) {
               <Check className="size-7" strokeWidth={2.5} />
             </motion.div>
             <div className="mt-5 text-center">
-              <h3 className="text-xl font-semibold tracking-tight">Order completed</h3>
+              <h3 className="text-xl font-semibold tracking-tight">Order received</h3>
               <p className="mt-1 text-sm text-white/48">
-                {side} {quantity} {quantity === 1 ? "share" : "shares"} of {symbol}
+                {side} {quantity} {quantity === 1 ? "share" : "shares"} of {symbol} is in the queue. You will be notified when it is executed.
               </p>
             </div>
             <div className="mt-6 space-y-3 rounded-2xl bg-white/4 p-4">
               <div className="flex justify-between text-sm">
-                <span className="text-white/45">Execution price</span>
+                <span className="text-white/45">Indicative price</span>
                 <span className="number-tabular font-medium">{formatCurrency(executionPrice)}</span>
               </div>
               <div className="flex justify-between text-sm">

@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link, useParams } from "react-router";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, Building2, Clock3, Globe2, Star, TrendingUp } from "lucide-react";
@@ -5,7 +6,7 @@ import { api } from "@/lib/api";
 import { formatCurrency } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { useAppStore } from "@/store/app-store";
-import { TradingChart } from "@/components/charts";
+import { RANGE_INTERVALS, RangePicker, TradingChart } from "@/components/charts";
 import { OrderTicket } from "@/components/order-ticket";
 import { Badge, Card, PageHeader, SectionHeader } from "@/components/ui";
 
@@ -21,6 +22,14 @@ export function StockDetailsPage() {
     enabled: Boolean(symbol),
     retry: 1,
     staleTime: 15_000
+  });
+  const [range, setRange] = useState("1M");
+  const historyQuery = useQuery({
+    queryKey: ["history", symbol, range],
+    queryFn: () => api.history(symbol, range),
+    enabled: Boolean(symbol),
+    retry: 1,
+    staleTime: 60_000
   });
   const price = quoteQuery.data?.price ?? 0;
 
@@ -41,13 +50,16 @@ export function StockDetailsPage() {
               <div><p className="text-xs text-[var(--text-muted)]">Latest market quote</p><p className="number-tabular mt-2 text-3xl font-semibold tracking-[-0.04em]">{price ? formatCurrency(price) : "—"}</p><p className="mt-2 text-sm text-[var(--text-muted)]">{quoteQuery.data?.currency ?? "Currency unavailable"}</p></div>
               <Badge tone={quoteQuery.isSuccess ? "positive" : "info"}><Clock3 className="mr-1 size-3" /> {quoteQuery.isLoading ? "Loading" : quoteQuery.isSuccess ? "Latest quote" : "Unavailable"}</Badge>
             </div>
-            <div className="mt-6 border-t border-[var(--line)] pt-5"><TradingChart data={[]} className="h-[420px]" /></div>
+            <div className="mt-6 border-t border-[var(--line)] pt-5">
+              <div className="mb-3 flex justify-end"><RangePicker range={range} onChange={setRange} /></div>
+              <TradingChart data={historyQuery.data?.candles ?? []} timeframe={RANGE_INTERVALS[range]} className="h-[420px]" />
+            </div>
           </Card>
 
           <Card className="p-5 md:p-6">
             <SectionHeader title="Instrument information" description="Information derived from the selected exchange symbol" />
             <div className="grid gap-3 sm:grid-cols-3">
-              {[[Building2, "Exchange", symbol.endsWith(".NS") ? "NSE" : "Unknown"], [Globe2, "Currency", quoteQuery.data?.currency ?? "—"], [TrendingUp, "History", "Not connected"]].map(([Icon, label, value]) => <div key={label} className="rounded-xl bg-[var(--panel-muted)] p-4"><Icon className="size-4 text-brand-500" /><p className="mt-4 text-[10px] font-semibold tracking-wider text-[var(--text-muted)] uppercase">{label}</p><p className="mt-1 text-sm font-semibold">{value}</p></div>)}
+              {[[Building2, "Exchange", symbol.endsWith(".NS") ? "NSE" : "Unknown"], [Globe2, "Currency", quoteQuery.data?.currency ?? "—"], [TrendingUp, "History", "Yahoo Finance"]].map(([Icon, label, value]) => <div key={label} className="rounded-xl bg-[var(--panel-muted)] p-4"><Icon className="size-4 text-brand-500" /><p className="mt-4 text-[10px] font-semibold tracking-wider text-[var(--text-muted)] uppercase">{label}</p><p className="mt-1 text-sm font-semibold">{value}</p></div>)}
             </div>
           </Card>
         </div>

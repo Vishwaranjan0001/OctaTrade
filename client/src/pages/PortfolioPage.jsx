@@ -28,6 +28,13 @@ export function PortfolioPage() {
     staleTime: 30_000
   });
 
+  const historyQuery = useQuery({
+    queryKey: ["portfolio", "history", token],
+    queryFn: () => api.portfolioHistory(token),
+    enabled: Boolean(token),
+    staleTime: 60_000
+  });
+
   const holdings = portfolioQuery.data?.holdings ?? [];
   const wallet = walletQuery.data;
   const loading = portfolioQuery.isLoading || walletQuery.isLoading;
@@ -103,8 +110,8 @@ export function PortfolioPage() {
 
       <div className="grid gap-5 xl:grid-cols-[1.45fr_.75fr]">
         <Card className="p-5 md:p-6">
-          <SectionHeader title="Growth of ₹1 invested" description="Historical portfolio snapshots are not available yet" action={<Badge tone="info">No stored history</Badge>} />
-          <PortfolioChart data={[]} normalized />
+          <SectionHeader title="Growth of ₹1 invested" description="Current holdings vs NIFTY 50 (dashed)" action={<Badge tone="info">Last 1 month</Badge>} />
+          <PortfolioChart data={historyQuery.data?.history ?? []} normalized />
         </Card>
         <Card className="p-5 md:p-6">
           <SectionHeader title="Asset allocation" description="Current position weights" />

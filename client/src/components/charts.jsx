@@ -10,6 +10,22 @@ export { Sparkline } from "@/components/sparkline";
 const tickStyle = { fill: "var(--text-muted)", fontSize: 10 };
 const EMPTY = [];
 
+// Candle size for each history range (TradingChart needs it to format times).
+export const RANGE_INTERVALS = { "1D": "5m", "1W": "30m", "1M": "1D", "1Y": "1D" };
+
+export function RangePicker({ range, onChange }) {
+  return <div className="flex gap-1 rounded-xl bg-[var(--panel-muted)] p-1">
+    {Object.keys(RANGE_INTERVALS).map((option) => <button
+      key={option}
+      type="button"
+      onClick={() => onChange(option)}
+      className={cn("h-7 rounded-lg px-3 text-[10px] font-semibold transition", range === option ? "bg-[var(--panel-solid)] text-brand-500 shadow-sm" : "text-[var(--text-muted)]")}
+    >
+      {option}
+    </button>)}
+  </div>;
+}
+
 // Purpose: explain missing chart data. Input: message. Output: accessible panel.
 // File: components/charts.jsx.
 function ChartEmpty({ message = "Historical data is not available yet." }) {

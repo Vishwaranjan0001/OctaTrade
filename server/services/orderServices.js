@@ -1,22 +1,70 @@
+import mongoose from "mongoose";
 import { Order } from "../models/Order.js";
 import { Wallet } from "../models/Wallet.js";
 import { WalletTransaction } from "../models/WalletTransaction.js";
 import { Holding } from "../models/Holding.js";
 import { getMarketQuote } from "./marketDataServices.js";
+import { enqueueOrder, getSchedulingPolicy } from "../scheduler/scheduler.js";
 
-export async function createOrder(userId, symbol, side, quantity) {
-  const order = await Order.create({
-    userId: userId,
-    symbol: symbol,
-    side: side,
-    quantity: quantity
-  });
+export async function submitOrder(
+  userId,
+  { symbol, side, quantity, priority, idempotencyKey }
+) {
+  if (idempotencyKey) {
+    const existingOrder = await Order.findOne({
+      userId: userId,
+      idempotencyKey: idempotencyKey
+    });
 
-  return order;
+    if (existingOrder) {
+      return {
+        order: existingOrder,
+        isDuplicate: true
+      };
+    }
+  }
+
+  const schedulingPolicy = await getSchedulingPolicy();
+
+  let order;
+
+  try {
+    order = await Order.create({
+      userId: userId,
+      symbol: symbol,
+      side: side,
+      quantity: quantity,
+      priority: priority,
+      idempotencyKey: idempotencyKey,
+      schedulingPolicy: schedulingPolicy
+    });
+  } catch (error) {
+    if (error.code === 11000 && idempotencyKey) {
+      const existingOrder = await Order.findOne({
+        userId: userId,
+        idempotencyKey: idempotencyKey
+      });
+
+      return {
+        order: existingOrder,
+        isDuplicate: true
+      };
+    }
+
+    throw error;
+  }
+
+  await enqueueOrder(order);
+
+  return {
+    order: order,
+    isDuplicate: false
+  };
 }
 
-export async function rejectOrder(order) {
+export async function rejectOrder(order, reason) {
   order.status = "REJECTED";
+  order.rejectionReason = reason;
   await order.save();
 
   return order;
@@ -26,22 +74,28 @@ export async function updateHoldingAfterBuy(
   userId,
   symbol,
   quantity,
-  executionPricePaise
+  executionPricePaise,
+  session
 ) {
-  let holding = await Holding.findOne({
+  const holding = await Holding.findOne({
     userId: userId,
     symbol: symbol
-  });
+  }).session(session);
 
   if (!holding) {
-    holding = await Holding.create({
-      userId: userId,
-      symbol: symbol,
-      quantity: quantity,
-      averageBuyPricePaise: executionPricePaise
-    });
+    const createdHoldings = await Holding.create(
+      [
+        {
+          userId: userId,
+          symbol: symbol,
+          quantity: quantity,
+          averageBuyPricePaise: executionPricePaise
+        }
+      ],
+      { session: session }
+    );
 
-    return holding;
+    return createdHoldings[0];
   }
 
   const existingValuePaise =
@@ -54,20 +108,22 @@ export async function updateHoldingAfterBuy(
     (existingValuePaise + purchasedValuePaise) / newQuantity
   );
 
-  await holding.save();
+  await holding.save({ session: session });
 
   return holding;
 }
 
-export async function executeBuyOrder(userId, symbol, quantity) {
-  const order = await createOrder(userId, symbol, "BUY", quantity);
+export async function executeBuyOrder(order) {
+  const userId = order.userId;
+  const symbol = order.symbol;
+  const quantity = order.quantity;
 
   let quote;
 
   try {
     quote = await getMarketQuote(symbol);
   } catch (error) {
-    await rejectOrder(order);
+    await rejectOrder(order, "QUOTE_UNAVAILABLE");
 
     return {
       success: false,
@@ -81,7 +137,7 @@ export async function executeBuyOrder(userId, symbol, quantity) {
     !Number.isFinite(quote.price) ||
     quote.price <= 0
   ) {
-    await rejectOrder(order);
+    await rejectOrder(order, "INVALID_QUOTE");
 
     return {
       success: false,
@@ -94,7 +150,7 @@ export async function executeBuyOrder(userId, symbol, quantity) {
   const totalAmountPaise = executionPricePaise * quantity;
 
   if (executionPricePaise < 1) {
-    await rejectOrder(order);
+    await rejectOrder(order, "INVALID_QUOTE");
 
     return {
       success: false,
@@ -108,7 +164,7 @@ export async function executeBuyOrder(userId, symbol, quantity) {
   });
 
   if (!existingWallet) {
-    await rejectOrder(order);
+    await rejectOrder(order, "WALLET_NOT_FOUND");
 
     return {
       success: false,
@@ -118,7 +174,7 @@ export async function executeBuyOrder(userId, symbol, quantity) {
   }
 
   if (existingWallet.availableBalancePaise < totalAmountPaise) {
-    await rejectOrder(order);
+    await rejectOrder(order, "INSUFFICIENT_FUNDS");
 
     return {
       success: false,
@@ -127,67 +183,91 @@ export async function executeBuyOrder(userId, symbol, quantity) {
     };
   }
 
-  const wallet = await Wallet.findOneAndUpdate(
-    {
-      _id: existingWallet._id,
-      availableBalancePaise: {
-        $gte: totalAmountPaise
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  try {
+    const wallet = await Wallet.findOneAndUpdate(
+      {
+        _id: existingWallet._id,
+        availableBalancePaise: {
+          $gte: totalAmountPaise
+        }
+      },
+      {
+        $inc: {
+          availableBalancePaise: -totalAmountPaise
+        }
+      },
+      {
+        returnDocument: "after",
+        session: session
       }
-    },
-    {
-      $inc: {
-        availableBalancePaise: -totalAmountPaise
-      }
-    },
-    {
-      new: true,
-      runValidators: true
+    );
+
+    if (!wallet) {
+      await session.abortTransaction();
+      await rejectOrder(order, "INSUFFICIENT_FUNDS");
+
+      return {
+        success: false,
+        reason: "INSUFFICIENT_FUNDS",
+        order: order
+      };
     }
-  );
 
-  if (!wallet) {
-    await rejectOrder(order);
+    await WalletTransaction.create(
+      [
+        {
+          userId: userId,
+          walletId: wallet._id,
+          type: "DEBIT",
+          amountPaise: totalAmountPaise,
+          availableBalanceAfterPaise: wallet.availableBalancePaise,
+          reservedBalanceAfterPaise: wallet.reservedBalancePaise
+        }
+      ],
+      { session: session }
+    );
+
+    const holding = await updateHoldingAfterBuy(
+      userId,
+      symbol,
+      quantity,
+      executionPricePaise,
+      session
+    );
+
+    order.status = "COMPLETED";
+    order.executionPricePaise = executionPricePaise;
+    order.totalAmountPaise = totalAmountPaise;
+    await order.save({ session: session });
+
+    await session.commitTransaction();
 
     return {
-      success: false,
-      reason: "INSUFFICIENT_FUNDS",
-      order: order
+      success: true,
+      order: order,
+      wallet: wallet,
+      holding: holding
     };
+  } catch (error) {
+    if (session.inTransaction()) {
+      await session.abortTransaction();
+    }
+
+    await rejectOrder(order, "EXECUTION_ERROR");
+    throw error;
+  } finally {
+    await session.endSession();
   }
-
-  await WalletTransaction.create({
-    userId: userId,
-    walletId: wallet._id,
-    type: "DEBIT",
-    amountPaise: totalAmountPaise,
-    availableBalanceAfterPaise: wallet.availableBalancePaise,
-    reservedBalanceAfterPaise: wallet.reservedBalancePaise
-  });
-
-  const holding = await updateHoldingAfterBuy(
-    userId,
-    symbol,
-    quantity,
-    executionPricePaise
-  );
-
-  order.status = "COMPLETED";
-  order.executionPricePaise = executionPricePaise;
-  order.totalAmountPaise = totalAmountPaise;
-  await order.save();
-
-  return {
-    success: true,
-    order: order,
-    wallet: wallet,
-    holding: holding
-  };
 }
 
 export async function updateHoldingAfterSell(
   userId,
   symbol,
-  quantity
+  quantity,
+  session
 ) {
   const holding = await Holding.findOneAndUpdate(
     {
@@ -203,7 +283,8 @@ export async function updateHoldingAfterSell(
       }
     },
     {
-      returnDocument: "after"
+      returnDocument: "after",
+      session: session
     }
   );
 
@@ -211,7 +292,7 @@ export async function updateHoldingAfterSell(
     const existingHolding = await Holding.findOne({
       userId: userId,
       symbol: symbol
-    });
+    }).session(session);
 
     if (!existingHolding) {
       return {
@@ -227,10 +308,13 @@ export async function updateHoldingAfterSell(
   }
 
   if (holding.quantity === 0) {
-    await Holding.deleteOne({
-      _id: holding._id,
-      quantity: 0
-    });
+    await Holding.deleteOne(
+      {
+        _id: holding._id,
+        quantity: 0
+      },
+      { session: session }
+    );
 
     return {
       success: true,
@@ -244,24 +328,17 @@ export async function updateHoldingAfterSell(
   };
 }
 
-export async function executeSellOrder(
-  userId,
-  symbol,
-  quantity
-) {
-  const order = await createOrder(
-    userId,
-    symbol,
-    "SELL",
-    quantity
-  );
+export async function executeSellOrder(order) {
+  const userId = order.userId;
+  const symbol = order.symbol;
+  const quantity = order.quantity;
 
   let quote;
 
   try {
     quote = await getMarketQuote(symbol);
   } catch (error) {
-    await rejectOrder(order);
+    await rejectOrder(order, "QUOTE_UNAVAILABLE");
 
     return {
       success: false,
@@ -275,7 +352,7 @@ export async function executeSellOrder(
     !Number.isFinite(quote.price) ||
     quote.price <= 0
   ) {
-    await rejectOrder(order);
+    await rejectOrder(order, "INVALID_QUOTE");
 
     return {
       success: false,
@@ -289,7 +366,7 @@ export async function executeSellOrder(
   );
 
   if (executionPricePaise < 1) {
-    await rejectOrder(order);
+    await rejectOrder(order, "INVALID_QUOTE");
 
     return {
       success: false,
@@ -306,7 +383,7 @@ export async function executeSellOrder(
   });
 
   if (!existingWallet) {
-    await rejectOrder(order);
+    await rejectOrder(order, "WALLET_NOT_FOUND");
 
     return {
       success: false,
@@ -315,66 +392,86 @@ export async function executeSellOrder(
     };
   }
 
-  const holdingResult = await updateHoldingAfterSell(
-    userId,
-    symbol,
-    quantity
-  );
+  const session = await mongoose.startSession();
+  session.startTransaction();
 
-  if (!holdingResult.success) {
-    await rejectOrder(order);
+  try {
+    const holdingResult = await updateHoldingAfterSell(
+      userId,
+      symbol,
+      quantity,
+      session
+    );
+
+    if (!holdingResult.success) {
+      await session.abortTransaction();
+      await rejectOrder(order, holdingResult.reason);
+
+      return {
+        success: false,
+        reason: holdingResult.reason,
+        order: order
+      };
+    }
+
+    const wallet = await Wallet.findOneAndUpdate(
+      {
+        _id: existingWallet._id
+      },
+      {
+        $inc: {
+          availableBalancePaise: totalAmountPaise
+        }
+      },
+      {
+        returnDocument: "after",
+        session: session
+      }
+    );
+
+    if (!wallet) {
+      throw new Error(
+        "Wallet disappeared during SELL execution"
+      );
+    }
+
+    await WalletTransaction.create(
+      [
+        {
+          userId: userId,
+          walletId: wallet._id,
+          type: "CREDIT",
+          amountPaise: totalAmountPaise,
+          availableBalanceAfterPaise: wallet.availableBalancePaise,
+          reservedBalanceAfterPaise: wallet.reservedBalancePaise
+        }
+      ],
+      { session: session }
+    );
+
+    order.status = "COMPLETED";
+    order.executionPricePaise = executionPricePaise;
+    order.totalAmountPaise = totalAmountPaise;
+    await order.save({ session: session });
+
+    await session.commitTransaction();
 
     return {
-      success: false,
-      reason: holdingResult.reason,
-      order: order
+      success: true,
+      order: order,
+      wallet: wallet,
+      holding: holdingResult.holding
     };
-  }
-
-  const wallet = await Wallet.findOneAndUpdate(
-    {
-      _id: existingWallet._id
-    },
-    {
-      $inc: {
-        availableBalancePaise: totalAmountPaise
-      }
-    },
-    {
-      new: true,
-      runValidators: true
+  } catch (error) {
+    if (session.inTransaction()) {
+      await session.abortTransaction();
     }
-  );
 
-  if (!wallet) {
-    throw new Error(
-      "Wallet disappeared during SELL execution"
-    );
+    await rejectOrder(order, "EXECUTION_ERROR");
+    throw error;
+  } finally {
+    await session.endSession();
   }
-
-  await WalletTransaction.create({
-    userId: userId,
-    walletId: wallet._id,
-    type: "CREDIT",
-    amountPaise: totalAmountPaise,
-    availableBalanceAfterPaise:
-      wallet.availableBalancePaise,
-    reservedBalanceAfterPaise:
-      wallet.reservedBalancePaise
-  });
-
-  order.status = "COMPLETED";
-  order.executionPricePaise = executionPricePaise;
-  order.totalAmountPaise = totalAmountPaise;
-
-  await order.save();
-
-  return {
-    success: true,
-    order: order,
-    wallet: wallet,
-    holding: holdingResult.holding
-  };
 }
 
 export async function getOrdersByUserId(userId) {

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { NavLink, Outlet, useLocation, useNavigate } from "react-router";
-import { AnimatePresence, motion } from "motion/react";
+import { NavLink, Outlet, useLocation, useMatch, useNavigate } from "react-router";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useQuery } from "@tanstack/react-query";
 import * as Dialog from "@radix-ui/react-dialog";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
@@ -51,22 +51,49 @@ const secondaryNavigation = [
   { label: "Profile", path: "/profile", icon: UserRound },
   { label: "Settings", path: "/settings", icon: Settings }
 ];
-function SidebarLink({ item, collapsed }) {
+function SidebarLink({ item, collapsed, reduceMotion }) {
+  // Radix's asChild wrapper requires a string className; it stringifies NavLink callbacks.
+  const isActive = Boolean(useMatch({ path: item.path, end: false }));
+  const [hovered, setHovered] = useState(false);
+  const updateGlow = (event) => {
+    if (event.pointerType === "touch") return;
+    if (collapsed) {
+      setHovered(true);
+      return;
+    }
+    const link = event.currentTarget;
+    const bounds = link.getBoundingClientRect();
+    link.style.setProperty("--sidebar-glow-x", `${event.clientX - bounds.left}px`);
+    link.style.setProperty("--sidebar-glow-y", `${event.clientY - bounds.top}px`);
+  };
+  const resetGlow = (event) => {
+    setHovered(false);
+    event.currentTarget.style.removeProperty("--sidebar-glow-x");
+    event.currentTarget.style.removeProperty("--sidebar-glow-y");
+  };
   const link = <NavLink
     to={item.path}
-    className={({ isActive }) => cn(
-      "group relative flex h-10 items-center gap-3 rounded-xl px-3 text-sm font-medium transition",
-      isActive ? "bg-brand-500/12 text-brand-500" : "text-[var(--text-muted)] hover:bg-[var(--panel-muted)] hover:text-[var(--text)]",
-      collapsed && "justify-center px-0"
+    aria-label={item.label}
+    data-zoomed={collapsed && hovered ? "true" : undefined}
+    onPointerEnter={updateGlow}
+    onPointerMove={updateGlow}
+    onPointerLeave={resetGlow}
+    onPointerCancel={resetGlow}
+    className={cn(
+      "sidebar-link relative flex h-10 items-center gap-3 rounded-xl px-3 text-sm font-medium",
+      isActive ? "bg-brand-500/12 text-brand-500" : "text-[var(--text-muted)]",
+      collapsed && "sidebar-link-collapsed justify-center px-0"
     )}
   >
       {({ isActive }) => <>
+          {collapsed ? <span aria-hidden="true" className="sidebar-icon-lens" /> : null}
           {isActive ? <motion.span
     layoutId="sidebar-active"
+    transition={reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 420, damping: 38 }}
     className="absolute left-0 h-5 w-0.5 rounded-full bg-brand-500"
   /> : null}
-          <item.icon className="size-[17px] shrink-0" strokeWidth={1.8} />
-          {!collapsed ? <span>{item.label}</span> : null}
+          <item.icon className="sidebar-link-icon size-[17px] shrink-0" strokeWidth={1.8} />
+          {!collapsed ? <span className="sidebar-link-label">{item.label}</span> : null}
         </>}
     </NavLink>;
   if (!collapsed) {
@@ -89,25 +116,33 @@ function Sidebar() {
   const collapsed = useAppStore((state) => state.sidebarCollapsed);
   const toggleSidebar = useAppStore((state) => state.toggleSidebar);
   const user = useAppStore((state) => state.user);
+  const reduceMotion = useReducedMotion();
+  const linkProps = {
+    collapsed,
+    reduceMotion
+  };
   return <motion.aside
     animate={{ width: collapsed ? 76 : 238 }}
-    transition={{ type: "spring", stiffness: 320, damping: 32 }}
+    transition={reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 320, damping: 32 }}
     className="fixed inset-y-0 left-0 z-30 hidden border-r border-[var(--line)] bg-[var(--panel)] backdrop-blur-2xl lg:flex lg:flex-col"
   >
       <div className={cn("flex h-20 items-center border-b border-[var(--line)]", collapsed ? "justify-center" : "px-5")}>
         <Brand compact={collapsed} />
       </div>
 
-      <nav className="soft-scrollbar flex-1 space-y-1 overflow-y-auto p-3">
+      <motion.nav
+        layoutScroll
+        className="soft-scrollbar flex-1 space-y-1 overflow-y-auto p-3"
+      >
         {!collapsed ? <p className="px-3 pt-2 pb-2 text-[9px] font-bold tracking-[0.16em] text-[var(--text-muted)] uppercase">
             Workspace
           </p> : null}
-        {navigation.map((item) => <SidebarLink key={item.path} item={item} collapsed={collapsed} />)}
+        {navigation.map((item) => <SidebarLink key={item.path} item={item} {...linkProps} />)}
 
         <div className="my-3 border-t border-[var(--line)]" />
 
-        {secondaryNavigation.map((item) => <SidebarLink key={item.path} item={item} collapsed={collapsed} />)}
-      </nav>
+        {secondaryNavigation.map((item) => <SidebarLink key={item.path} item={item} {...linkProps} />)}
+      </motion.nav>
 
       <div className="border-t border-[var(--line)] p-3">
         {!collapsed ? <div className="mb-3 rounded-xl border border-brand-500/15 bg-brand-500/7 p-3">

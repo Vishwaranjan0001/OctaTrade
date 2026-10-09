@@ -13,12 +13,12 @@ end
 return 0
 `;
 
-export async function acquireLock(userId) {
+export async function acquireLock(userId, waitLimitMs = WAIT_LIMIT_MS) {
   const key = `lock:user:${userId}`;
   const token = randomUUID();
   const startTime = Date.now();
 
-  while (Date.now() - startTime < WAIT_LIMIT_MS) {
+  while (Date.now() - startTime < waitLimitMs) {
     const result = await redisClient.sendCommand([
       "SET", key, token, "NX", "PX", String(LOCK_TIME_MS)
     ]);

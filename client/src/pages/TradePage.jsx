@@ -6,13 +6,14 @@ import { api } from "@/lib/api";
 import { formatCurrency, formatCurrencyFromPaise, formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { useAppStore } from "@/store/app-store";
-import { TradingChart } from "@/components/charts";
+import { RANGE_INTERVALS, RangePicker, TradingChart } from "@/components/charts";
 import { OrderTicket } from "@/components/order-ticket";
 import { Badge, Button, Card, Input, PageHeader } from "@/components/ui";
 
 export function TradePage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [watchlistQuery, setWatchlistQuery] = useState("");
+  const [range, setRange] = useState("1D");
   const selectedSymbol = useAppStore((state) => state.selectedSymbol);
   const setSelectedSymbol = useAppStore((state) => state.setSelectedSymbol);
   const watchlist = useAppStore((state) => state.watchlist);
@@ -30,6 +31,13 @@ export function TradePage() {
     enabled: Boolean(symbol),
     retry: 1,
     staleTime: 15_000
+  });
+  const historyQuery = useQuery({
+    queryKey: ["history", symbol, range],
+    queryFn: () => api.history(symbol, range),
+    enabled: Boolean(symbol),
+    retry: 1,
+    staleTime: 60_000
   });
   const watchlistQueries = useQueries({
     queries: watchlist.map((item) => ({
@@ -123,8 +131,11 @@ export function TradePage() {
           </div>
 
           <div className="bg-[var(--panel)] p-2 md:p-4">
-            <p className="px-2 pt-1 pb-3 text-[10px] text-[var(--text-muted)]">Historical chart unavailable · the backend currently returns only the latest quote</p>
-            <TradingChart data={[]} chartType="Candles" timeframe="1D" showVolume={false} className="h-[440px] md:h-[520px]" />
+            <div className="flex items-center justify-between px-2 pt-1 pb-3">
+              <p className="text-[10px] text-[var(--text-muted)]">{historyQuery.isLoading ? "Loading price history…" : historyQuery.isError ? "Price history unavailable" : "Price history · Yahoo Finance"}</p>
+              <RangePicker range={range} onChange={setRange} />
+            </div>
+            <TradingChart data={historyQuery.data?.candles ?? []} chartType="Candles" timeframe={RANGE_INTERVALS[range]} showVolume={false} className="h-[440px] md:h-[520px]" />
           </div>
 
           <div className="border-t border-[var(--line)] bg-[var(--panel)] p-4 md:p-5">

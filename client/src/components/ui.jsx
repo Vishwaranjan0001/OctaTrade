@@ -1,4 +1,4 @@
-import { motion } from "motion/react";
+import { motion, useReducedMotion } from "motion/react";
 import { LoaderCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 function Button({
@@ -118,19 +118,25 @@ function MetricCard({
   positive = true,
   icon,
   footer,
+  animated = false,
   delay = 0
 }) {
+  const reduceMotion = useReducedMotion();
   return <motion.div
-    initial={{ opacity: 0, y: 14 }}
-    animate={{ opacity: 1, y: 0 }}
-    transition={{ delay, duration: 0.38 }}
-    whileHover={{ y: -2 }}
-    className="panel relative min-h-40 overflow-hidden rounded-2xl p-5 md:p-6"
+    initial={reduceMotion ? false : { opacity: 0, x: 0, y: 14 }}
+    animate={{ opacity: 1, x: 0, y: 0 }}
+    transition={reduceMotion ? { duration: 0 } : { delay, duration: 0.48, ease: "easeOut" }}
+    whileHover={reduceMotion ? undefined : { y: -2 }}
+    className={cn("panel relative min-h-40 overflow-hidden rounded-2xl p-5 md:p-6", animated && "metric-card-themed")}
   >
-      <div className="absolute -top-12 -right-12 size-28 rounded-full bg-brand-500/8 blur-2xl" />
+      {animated ? <div
+        aria-hidden="true"
+        className="metric-card-effects"
+      /> : null}
+      <div className={cn("absolute -top-12 -right-12 size-28 rounded-full blur-2xl", animated ? "metric-card-corner-glow" : "bg-brand-500/8")} />
       <div className="relative flex items-center justify-between">
         <p className="text-base font-semibold tracking-[-0.02em] text-[var(--text-muted)] md:text-[17px]">{label}</p>
-        <span className="grid size-9 place-items-center rounded-xl bg-brand-500/10 text-brand-500">
+        <span className={cn("grid size-9 place-items-center rounded-xl", animated ? "metric-card-themed-icon" : "bg-brand-500/10 text-brand-500")}>
           {icon}
         </span>
       </div>

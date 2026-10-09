@@ -37,8 +37,13 @@ const orderSchema = new mongoose.Schema(
     status: {
       type: String,
       required: true,
-      enum: ["PENDING", "COMPLETED", "REJECTED", "CANCELLED"],
+      enum: ["PENDING", "PROCESSING", "COMPLETED", "REJECTED", "CANCELLED"],
       default: "PENDING"
+    },
+
+    rejectionReason: {
+      type: String,
+      default: null
     },
 
     executionPricePaise: {
@@ -51,10 +56,65 @@ const orderSchema = new mongoose.Schema(
       type: Number,
       default: null,
       min: 1
+    },
+
+    idempotencyKey: {
+      type: String,
+      trim: true
+    },
+
+    priority: {
+      type: Number,
+      required: true,
+      min: 1,
+      max: 3,
+      default: 2
+    },
+
+    schedulingPolicy: {
+      type: String,
+      enum: ["FCFS", "PRIORITY", "ROUND_ROBIN"]
+    },
+
+    workerId: {
+      type: Number,
+      default: null
+    },
+
+    startedAt: {
+      type: Date,
+      default: null
+    },
+
+    finishedAt: {
+      type: Date,
+      default: null
     }
   },
   {
     timestamps: true
+  }
+);
+
+orderSchema.index(
+  {
+    userId: 1,
+    createdAt: -1
+  }
+);
+
+orderSchema.index(
+  {
+    userId: 1,
+    idempotencyKey: 1
+  },
+  {
+    unique: true,
+    partialFilterExpression: {
+      idempotencyKey: {
+        $type: "string"
+      }
+    }
   }
 );
 

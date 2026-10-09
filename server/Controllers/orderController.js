@@ -1,17 +1,22 @@
 import mongoose from "mongoose";
 import {
-  executeBuyOrder,
-  executeSellOrder,
+  submitOrder,
   getOrdersByUserId,
   getOrderByIdForUser
 } from "../services/orderServices.js";
-import { acquireLock, releaseLock } from "../concurrency/userLock.js";
 
 export async function placeOrder(req, res) {
   try {
     const symbol = req.body.symbol;
     const side = req.body.side;
     const quantity = req.body.quantity;
+    const idempotencyKey = req.get("Idempotency-Key");
+
+    let priority = 2;
+
+    if (req.body.priority !== undefined) {
+      priority = req.body.priority;
+    }
 
     if (typeof symbol !== "string" || symbol.trim().length === 0) {
       return res.status(400).json({
@@ -47,70 +52,36 @@ export async function placeOrder(req, res) {
       });
     }
 
-        const lockToken = await acquireLock(req.userId);
-
-    if (!lockToken) {
-      return res.status(409).json({
-        message: "Another order is still being processed. Please try again."
+    if (![1, 2, 3].includes(priority)) {
+      return res.status(400).json({
+        message: "priority must be 1 (high), 2 (normal) or 3 (low)"
       });
     }
 
-    let result;
-
-    try {
-      if (normalizedSide === "BUY") {
-        result = await executeBuyOrder(req.userId, normalizedSymbol, quantity);
-      } else {
-        result = await executeSellOrder(req.userId, normalizedSymbol, quantity);
-      }
-    } finally {
-      await releaseLock(req.userId, lockToken);
+    if (idempotencyKey !== undefined && idempotencyKey.length > 100) {
+      return res.status(400).json({
+        message: "Idempotency-Key must not exceed 100 characters"
+      });
     }
 
-    if (!result.success) {
-      if (result.reason === "WALLET_NOT_FOUND") {
-        return res.status(404).json({
-          message: "Wallet not found",
-          order: result.order
-        });
-      }
+    const result = await submitOrder(req.userId, {
+      symbol: normalizedSymbol,
+      side: normalizedSide,
+      quantity: quantity,
+      priority: priority,
+      idempotencyKey: idempotencyKey
+    });
 
-      if (result.reason === "INSUFFICIENT_FUNDS") {
-        return res.status(400).json({
-          message: "Insufficient wallet balance",
-          order: result.order
-        });
-      }
-
-      if (result.reason === "HOLDING_NOT_FOUND") {
-        return res.status(400).json({
-          message: "You do not own this stock",
-          order: result.order
-        });
-      }
-
-      if (result.reason === "INSUFFICIENT_HOLDING") {
-        return res.status(400).json({
-          message: "Insufficient shares to complete the sale",
-          order: result.order
-        });
-      }
-
-      return res.status(502).json({
-        message: "Unable to get a valid market quote",
+    if (result.isDuplicate) {
+      return res.status(200).json({
+        message: "This order was already received",
         order: result.order
       });
     }
 
-    return res.status(201).json({
-      message: `${normalizedSide} order completed successfully`,
-      order: result.order,
-      wallet: {
-        availableBalancePaise: result.wallet.availableBalancePaise,
-        reservedBalancePaise: result.wallet.reservedBalancePaise,
-        currency: result.wallet.currency
-      },
-      holding: result.holding
+    return res.status(202).json({
+      message: `${normalizedSide} order received and queued`,
+      order: result.order
     });
   } catch (error) {
     console.error(error.message);

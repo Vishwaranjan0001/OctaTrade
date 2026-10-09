@@ -50,11 +50,14 @@ const api = {
   portfolio: (token) => apiRequest("/api/portfolio", { token }),
   orders: (token) => apiRequest("/api/orders", { token }),
   quote: (symbol) => apiRequest(`/api/quotes/${encodeURIComponent(symbol)}`),
-  placeOrder: (token, payload) => apiRequest(
+  history: (symbol, range) => apiRequest(`/api/quotes/${encodeURIComponent(symbol)}/history?range=${range}`),
+  portfolioHistory: (token) => apiRequest("/api/portfolio/history", { token }),
+  placeOrder: (token, payload, idempotencyKey) => apiRequest(
     "/api/orders",
     {
       method: "POST",
       token,
+      headers: { "Idempotency-Key": idempotencyKey },
       body: JSON.stringify(payload)
     }
   )
