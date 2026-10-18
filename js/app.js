@@ -408,7 +408,8 @@ function initMaster() {
 
       // marquee lives under the stats, never over section copy
       marquee.style.opacity = windowOpacity(p, mEnter, mLeave, 0.04, 1);
-      marqueeText.style.transform = `translate3d(${(-25 * p * 4).toFixed(2)}%, 0, 0)`;
+      const marqueeProgress = Math.max(0, Math.min(1, (p - mEnter) / (mLeave - mEnter)));
+      marqueeText.style.transform = `translate3d(${(reduceMotion ? 0 : -50 * marqueeProgress).toFixed(2)}%, 0, 0)`;
     },
   });
 }
