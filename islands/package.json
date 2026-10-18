@@ -1,0 +1,20 @@
+{
+  "name": "scroll-film-islands",
+  "private": true,
+  "scripts": {
+    "build": "node build.mjs"
+  },
+  "dependencies": {
+    "@gsap/react": "2.1.2",
+    "@hugeicons/core-free-icons": "4.3.3",
+    "@hugeicons/react": "1.1.10",
+    "lightweight-charts": "5.2.1",
+    "motion": "12.23.12",
+    "react": "19.1.1",
+    "react-dom": "19.1.1"
+  },
+  "devDependencies": {
+    "esbuild": "0.25.9",
+    "playwright-core": "1.47.2"
+  }
+}
