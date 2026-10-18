@@ -1,0 +1,16 @@
+# Installed dependencies and intermediate bundles
+node_modules/
+islands/out/
+
+# Local credentials and environment overrides
+.env
+.env.*
+!.env.example
+!.env.sample
+qa/test-account.json
+
+# Local tool state and operating-system files
+.claude/
+*.log
+.DS_Store
+Thumbs.db
