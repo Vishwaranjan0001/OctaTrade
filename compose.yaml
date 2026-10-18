@@ -1,0 +1,89 @@
+name: octatrade
+
+x-backend: &backend
+  image: octatrade-backend:local
+  build:
+    context: .
+    dockerfile: docker/server.Dockerfile
+  init: true
+  restart: unless-stopped
+  environment:
+    MONGODB_URI: mongodb://mongo:27017/octatrade?replicaSet=rs0
+    REDIS_URL: redis://redis:6379
+    JWT_SECRET: ${JWT_SECRET:-}
+    JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
+    WORKER_COUNT: ${WORKER_COUNT:-3}
+  depends_on:
+    mongo-init:
+      condition: service_completed_successfully
+    redis:
+      condition: service_healthy
+
+services:
+  frontend:
+    build: .
+    image: octatrade-frontend:local
+    init: true
+    restart: unless-stopped
+    ports:
+      - "${APP_HOST:-127.0.0.1}:${APP_PORT:-8787}:8787"
+    environment:
+      PORT: "8787"
+      API: http://api:3000
+    depends_on:
+      api:
+        condition: service_healthy
+      workers:
+        condition: service_started
+
+  api:
+    <<: *backend
+    volumes:
+      - app-config:/app/runtime
+
+  workers:
+    <<: *backend
+    command: ["node", "workerPool.js"]
+    healthcheck:
+      disable: true
+    stop_grace_period: 45s
+
+  mongo:
+    image: mongo:8.0
+    restart: unless-stopped
+    command: ["mongod", "--replSet", "rs0", "--bind_ip_all"]
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "quit(db.adminCommand({ping:1}).ok ? 0 : 1)"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 10s
+
+  mongo-init:
+    image: mongo:8.0
+    restart: "no"
+    depends_on:
+      mongo:
+        condition: service_healthy
+    volumes:
+      - ./docker/init-mongo.js:/scripts/init-mongo.js:ro
+    command: ["mongosh", "mongodb://mongo:27017/admin?directConnection=true", "--quiet", "/scripts/init-mongo.js"]
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  mongo-data:
+  redis-data:
+  app-config:
