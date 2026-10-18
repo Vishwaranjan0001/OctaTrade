@@ -1,12 +1,10 @@
 // OctaTrade post-film sections (Papermint structure, OctaTrade content).
-// Landing sections that follow the scroll reel. Each one is a React Bits component
-// mounted into a static placeholder in index.html.
+// Interactive React sections mounted into the landing page after the scroll reel.
 import { useEffect, useMemo, useRef, useState } from 'react';
 import ScrollReveal from './reactbits/ScrollReveal/ScrollReveal.jsx';
 import LogoLoop from './reactbits/LogoLoop/LogoLoop.jsx';
 import ScrollStack, { ScrollStackItem } from './reactbits/ScrollStack/ScrollStack.jsx';
-import MagicBento from './reactbits/MagicBento/MagicBento.jsx';
-import DotGrid from './reactbits/DotGrid/DotGrid.jsx';
+import FeatureTour from './FeatureTour.jsx';
 import CardSwap, { Card } from './reactbits/CardSwap/CardSwap.jsx';
 import ElasticSlider from './reactbits/ElasticSlider/ElasticSlider.jsx';
 import Counter from './reactbits/Counter/Counter.jsx';
@@ -130,82 +128,10 @@ function StepArt({ i }) {
   );
 }
 
-/* ---------- Features: MagicBento on a DotGrid ---------- */
-const WatchlistVisual = () => (
-  <div className="practice-visual">
-    <span className="preview-note">Watchlist preview</span>
-    {[['RELIANCE', 'Reliance Industries'], ['TCS', 'Tata Consultancy'], ['INFY', 'Infosys']].map(([symbol, name]) => (
-      <div className="practice-row" key={symbol}><b>{symbol}</b><span>{name}</span></div>
-    ))}
-  </div>
-);
-const PortfolioVisual = () => (
-  <div className="practice-visual portfolio-preview">
-    <span className="preview-note">Illustrative portfolio</span>
-    <div className="portfolio-total">₹1,02,450<span>Holdings value</span></div>
-    <div className="practice-row"><span>Invested</span><b>₹1,00,000</b></div>
-    <div className="practice-row"><span>Unrealised P/L</span><b className="preview-gain">+₹2,450</b></div>
-    <div className="practice-row"><span>Return on holdings</span><b className="preview-gain">+2.45%</b></div>
-    <p className="preview-note">Track each position alongside your total.</p>
-  </div>
-);
-const ChartVisual = () => (
-  <div className="practice-visual">
-    <span className="preview-note">Price history</span>
-    <div className="chart-ranges"><span>1D</span><span>1W</span><span>1M</span><span>1Y</span></div>
-    <p className="preview-note">Candlesticks and volume</p>
-  </div>
-);
-const ReviewVisual = () => (
-  <div className="practice-visual">
-    <div className="practice-row"><b>Portfolio mix</b><span>Weight of each holding</span></div>
-    <div className="practice-row"><b>Concentration</b><span>Your largest positions</span></div>
-    <div className="practice-row"><b>Available funds</b><span>Cash for your next trade</span></div>
-  </div>
-);
+/* ---------- Features: interactive product tour ---------- */
 export function Features() {
-  const items = [
-    { title: 'Know where you stand.', description: 'See your holdings, invested value and unrealised profit or loss together.', visual: <PortfolioVisual />, colSpan: 2, rowSpan: 2 },
-    { title: 'A watchlist of your own.', description: 'Keep the stocks you follow within reach.', visual: <WatchlistVisual /> },
-    { title: 'Put price in context.', description: 'Explore four chart ranges, from one day to one year.', visual: <ChartVisual /> },
-    { title: 'Understand your exposure.', description: 'Review your allocation, largest positions and available cash.', visual: <ReviewVisual />, colSpan: 2 },
-  ];
-  return (
-    <MagicBento
-      items={items}
-      columns={4}
-      rowHeight={210}
-      gap={14}
-      radius={22}
-      theme="light"
-      glowColor="31, 158, 110"
-      enableBorderGlow
-      enableSpotlight
-      spotlightRadius={320}
-      enableStars
-      particleCount={14}
-      enableTilt={false}
-      enableMagnetism
-      clickEffect
-    />
-  );
+  return <FeatureTour />;
 }
-export function Dots() {
-  return (
-    <DotGrid
-      dotSize={4}
-      gap={22}
-      baseColor="#d6cfbd"
-      activeColor={MINT}
-      proximity={130}
-      shockRadius={260}
-      shockStrength={4}
-      glow={0.2}
-      fade={0.35}
-    />
-  );
-}
-
 /* ---------- Risk calculator: ElasticSlider + Counter ---------- */
 export function RiskCalc() {
   const [risk, setRisk] = useState(1);

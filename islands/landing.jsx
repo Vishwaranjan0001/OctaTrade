@@ -6,9 +6,8 @@ import SplitText from './reactbits/SplitText/SplitText.jsx';
 import ScrollVelocity from './reactbits/ScrollVelocity/ScrollVelocity.jsx';
 import CountUp from './reactbits/CountUp/CountUp.jsx';
 import Magnet from './reactbits/Magnet/Magnet.jsx';
-import TearTicket from './reactbits/TearTicket/TearTicket.jsx';
 import Spark from './shared/Spark.jsx';
-import { Manifesto, Markets, HowItWorks, Features, Dots, RiskCalc, AppPreview, FinalCta, Wordmark } from './sections.jsx';
+import { Manifesto, Markets, HowItWorks, Features, RiskCalc, AppPreview, FinalCta, Wordmark } from './sections.jsx';
 
 window.PM_ISLANDS = true;
 const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -216,8 +215,7 @@ function boot() {
   mount('rb-manifesto', <Manifesto text={(manifesto && manifesto.textContent.trim()) || ''} />);
   mount('rb-markets', <Markets />);
   mount('rb-how', <HowItWorks />);
-  mount('rb-dots', <Dots />);
-  mount('rb-bento', <Features />);
+  mount('rb-feature-tour', <Features />);
   mount('rb-risk', <RiskCalc />);
   mount('rb-cards', <AppPreview />);
   const finalCta = readLink('rb-final', '#', 'Get started →');
