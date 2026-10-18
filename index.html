@@ -12,12 +12,18 @@
 <link rel="stylesheet" href="css/islands-landing.css" />
 <link rel="stylesheet" href="css/style.css" />
 <link rel="stylesheet" href="css/after.css" />
+<link rel="stylesheet" href="css/brand.css" />
+<script src="js/brand.js" defer></script>
 </head>
 <body>
 
 <!-- 1. Loader (progress is fed by real frame decoding) -->
 <div id="loader">
-  <div class="loader-brand">OctaTrade</div>
+  <div class="loader-brand logo"><svg class="brand-mark" width="36" height="36" viewBox="0 0 40 40" fill="none" aria-hidden="true">
+        <path class="brand-frame" d="M14 3.5h12L36.5 14v12L26 36.5H14L3.5 26V14Z" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/>
+        <path class="brand-trend" d="m11 26 7-8 5 4 7-10m-6 0h6v6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span class="brand-word">Octa<span class="brand-trade">Trade</span></span></div>
   <div id="loader-bar"><span id="loader-bar-fill"></span></div>
   <div id="loader-percent">0%</div>
 </div>
@@ -26,8 +32,11 @@
 <header class="site-header">
   <nav>
     <a class="logo" href="#top" data-scroll-to="0">
-      <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.3 3h7.4L21 8.3v7.4L15.7 21H8.3L3 15.7V8.3z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
-      OctaTrade
+      <svg class="brand-mark" width="36" height="36" viewBox="0 0 40 40" fill="none" aria-hidden="true">
+        <path class="brand-frame" d="M14 3.5h12L36.5 14v12L26 36.5H14L3.5 26V14Z" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/>
+        <path class="brand-trend" d="m11 26 7-8 5 4 7-10m-6 0h6v6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span class="brand-word">Octa<span class="brand-trade">Trade</span></span>
     </a>
     <ul>
       <!-- data-scroll-to = fraction of the reel; data-scroll-el = id of a section after the film -->

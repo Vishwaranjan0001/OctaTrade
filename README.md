@@ -7,7 +7,7 @@ The Papermint scroll-film landing page with OctaTrade content, plus a trading de
 Install [Docker Desktop](https://docs.docker.com/desktop/) (Windows/macOS, using Linux containers), or Docker Engine with the Compose plugin (Linux), and start Docker. No separate Node.js, MongoDB, or Redis installation is needed.
 
 ```bash
-git clone --branch feat/frontend-octa-final-2026-10-18 --single-branch https://github.com/Vishwaranjan0001/OctaTrade.git
+git clone https://github.com/Vishwaranjan0001/OctaTrade.git
 cd OctaTrade
 docker compose up --build -d
 ```
@@ -67,6 +67,7 @@ Env: `PORT` (8787) and `API` (http://localhost:3000).
 | `video/clips/` | The four Papermint clips (A2, B1, C3, D4); `video/cut/` holds A and B trimmed at the measured best join |
 | `video/film.mp4` | Assembled film (35.7 s) |
 | `app.html`, `css/desk.css`, `js/desk.js` | Trading app (hash routes): Dashboard (information only), Markets, Trade terminal, Stock details, Portfolio, Orders, Watchlist, Analytics, Activity, Wallet, Notifications, Profile, Settings (light/dark) |
+| `css/brand.css`, `js/brand.js`, `images/favicon.svg` | Animated OctaTrade identity shared by the landing page, sign-in, and trading desk; respects reduced motion |
 | `islands/` | React Bits components (`landing.jsx`, `sections.jsx`, `home.jsx`), built to `js/islands-*.js` |
 | App widgets (`islands/home.jsx`) | Counter + SpotlightCard metric cards, live Counter prices with up/down flash, AnimatedList feeds, BlurText titles, ScrollVelocity ticker (dashboard only), ShinyText live pills, GlareHover market tiles, ElasticSlider quantity, HoldButton hold-to-sell, DotGrid sign-in, SwipeToast, ClickSpark. `desk.js` feeds them through `window.__pmUI` + `pm:ui` events |
 | Charts | TradingView lightweight-charts 5.2.1 (bundled in `islands-home.js`): candlesticks + volume on Trade, area charts with a dashed Nifty 50 line elsewhere. Prices poll every 10 s and move the last candle |
