@@ -1,0 +1,7 @@
+islands/node_modules/
+islands/out/
+islands/reactbits/
+qa/*/
+qa/*.jpg
+qa/test-account.json
+video/cut/
