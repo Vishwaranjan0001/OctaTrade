@@ -120,20 +120,17 @@
 .dots-bg { position: absolute; inset: 0; z-index: 0; }
 .dots-bg canvas { display: block; }
 .bento-wrap { position: relative; z-index: 1; }
-.bento-orders, .bento-league, .bento-replay { font-family: var(--font-mono); font-size: 0.8rem; display: grid; gap: 6px; }
-.bento-orders div, .bento-league li { display: flex; justify-content: space-between; gap: 10px; padding: 6px 10px; border-radius: 8px; background: rgba(20, 20, 20, 0.04); }
-.bento-orders em, .bento-league em { font-style: normal; color: var(--ink-faint); }
-.bento-orders em.up, .bento-league em { color: var(--accent); }
-.bento-league { list-style: none; }
-.bento-league li.me { box-shadow: inset 0 0 0 1.5px var(--ink); font-weight: 700; }
-.bento-league b { font-family: var(--font-display); }
-.bento-replay { align-content: center; }
-.rp-date, .rp-hint { color: var(--ink-faint); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.12em; }
-.rp-bar { display: flex; align-items: flex-end; gap: 8px; height: 56px; }
-.rp-bar i { flex: 1; border-radius: 3px; background: var(--accent); }
-.rp-bar i:nth-child(1) { height: 40%; } .rp-bar i:nth-child(2) { height: 55%; background: var(--accent-2); }
-.rp-bar i:nth-child(3) { height: 50%; } .rp-bar i:nth-child(4) { height: 72%; }
-.rp-bar i.hide { height: 90%; background: repeating-linear-gradient(45deg, rgba(20,20,20,0.08) 0 6px, transparent 6px 12px); box-shadow: inset 0 0 0 1px rgba(20,20,20,0.15); }
+.features .magic-bento__description { color: #57534c; font-size: 14px; }
+.practice-visual { display: grid; gap: 12px; font-family: var(--font-body); font-size: 14px; width: 100%; }
+.practice-row { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 4px 16px; padding: 7px 0; }
+.practice-row span { color: #57534c; }
+.preview-note { font-size: 12px; line-height: 1.5; color: #57534c; margin: 0; }
+.portfolio-total { font-size: clamp(32px, 4vw, 52px); font-weight: 600; letter-spacing: -.03em; font-variant-numeric: tabular-nums; margin: 16px 0 24px; }
+.portfolio-total span { display: block; font-size: 14px; font-weight: 400; letter-spacing: 0; color: #57534c; margin-top: 8px; }
+.preview-gain { color: #136b4a; }
+.chart-ranges { display: flex; flex-wrap: wrap; gap: 8px; }
+.chart-ranges span { background: #eeebe4; padding: 9px 12px; border-radius: 4px; font-weight: 600; }
+.chart-ranges span:first-child { background: #173e30; color: #fbf9f4; }
 
 /* ---------- Split bands (risk + app preview) ---------- */
 .split { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); gap: clamp(32px, 5vw, 80px); align-items: center; }

@@ -123,58 +123,24 @@ function Tape() {
   );
 }
 
-/* ---------- Practice order: TearTicket ---------- */
-function Ticket() {
-  const q = useQuotes();
-  const tcs = q.find((x) => x.s === 'TCS.NS');
-  const [torn, setTorn] = useState(false);
-  const onTear = () => {
-    setTorn(true);
-    const r = document.getElementById('rb-ticket').getBoundingClientRect();
-    window.dispatchEvent(new CustomEvent('pm:spark', { detail: { x: r.left + r.width / 2, y: r.top + r.height * 0.72 } }));
-  };
+/* ---------- Market preview: quotes from the same feed as the trading desk ---------- */
+function MarketPreview() {
+  const quotes = useQuotes();
   return (
-    <TearTicket
-      orientation="vertical"
-      width={270}
-      height={420}
-      stubSize={118}
-      radius={10}
-      holes={11}
-      holeSize={5}
-      rotate={4}
-      tiltMax={7}
-      background="#fbf9f4"
-      stubBackground="#f3efe4"
-      color="#141414"
-      borderColor="rgba(20,20,20,0.16)"
-      onTear={onTear}
-      ariaLabel="Tear off the stub to place this practice order"
-      stub={
-        <div className="tk-stub">
-          <span className="tk-stub-k">{torn ? 'Order placed' : 'Tear to place'}</span>
-          <span className="tk-stub-v">₹0.00 real money</span>
-        </div>
-      }
-    >
-      <div className="tk">
-        <div className="tk-head">
-          <span>Practice order</span>
-          <span>#OT-0001</span>
-        </div>
-        <div className="tk-sym">
-          <strong>TCS</strong>
-          <span>{tcs && tcs.p != null ? `₹${money(tcs.p)}` : 'NSE'}</span>
-        </div>
-        <dl className="tk-dl">
-          <div><dt>Side</dt><dd className="up">Buy</dd></div>
-          <div><dt>Type</dt><dd>Market</dd></div>
-          <div><dt>Qty</dt><dd>10</dd></div>
-          <div><dt>Account</dt><dd>Paper</dd></div>
-        </dl>
-        {torn ? <div className="tk-stamp">Queued on paper</div> : null}
+    <div className="market-preview">
+      <div className="market-preview-head"><span>Market watch</span><span>NSE</span></div>
+      <h2>Your next idea<br />starts here.</h2>
+      <div className="market-preview-list">
+        {quotes.slice(0, 3).map((q) => (
+          <a key={q.s} href={`app.html#stock/${encodeURIComponent(q.s)}`}>
+            <span><b>{short(q.s)}</b><small>{q.n}</small></span>
+            <span className="market-preview-price">{q.p != null ? `₹${money(q.p)}` : 'View stock →'}</span>
+          </a>
+        ))}
       </div>
-    </TearTicket>
+      <p>Latest available quotes · May be delayed</p>
+      <a className="market-preview-cta" href="app.html#watchlist">Build your watchlist <span aria-hidden="true">↗</span></a>
+    </div>
   );
 }
 
@@ -230,7 +196,7 @@ function boot() {
   const endCta = readLink('rb-cta', '#', 'Get started →');
   mount('rb-hero-heading', <HeroHeading line1={line1} line2={line2} />);
   mount('rb-tape', <Tape />);
-  if (window.innerWidth > 900) mount('rb-ticket', <Ticket />);
+  if (window.innerWidth > 900) mount('rb-ticket', <MarketPreview />);
   mount('rb-hero-cta', <MagnetLink className="btn btn-ink" href={heroCta.href}>{heroCta.text}</MagnetLink>);
   mount('rb-cta', <MagnetLink className="cta-button" href={endCta.href}>{endCta.text}</MagnetLink>);
   document.querySelectorAll('.stat-number[data-count]').forEach((el) =>

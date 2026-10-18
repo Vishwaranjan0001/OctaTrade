@@ -82,10 +82,10 @@ export function Markets() {
 
 /* ---------- How it works: ScrollStack ---------- */
 const STEPS = [
-  { k: '01', t: 'Create an account', d: 'A name, an email and a password of eight or more characters. You stay signed in with a signed token.', tag: 'Free' },
-  { k: '02', t: 'Start with ₹1,00,000', d: 'Your wallet opens with one lakh of practice money, and you can deposit more. None of it is real money.', tag: '₹0 real money' },
-  { k: '03', t: 'Place a market order', d: 'Buy or sell any NSE symbol in whole shares. The order joins a queue and a worker fills it at the live price.', tag: 'Live NSE prices' },
-  { k: '04', t: 'Watch it settle', d: 'The status moves from pending to completed on your screen over a live socket, and your holdings and P/L refresh.', tag: 'Realtime' },
+  { k: '01', t: 'Make room to practise.', d: 'Create a free account and start with ₹1,00,000 in virtual funds. Your real money stays out of it.', tag: 'Your account' },
+  { k: '02', t: 'Find your focus.', d: 'Explore NSE stocks, study price charts and save the names you want to follow to your watchlist.', tag: 'Your watchlist' },
+  { k: '03', t: 'Put an idea to work.', d: 'Choose a stock and a quantity, then practise buying or selling with a simulated market trade.', tag: 'Your first trade' },
+  { k: '04', t: 'Review. Then refine.', d: 'Follow your holdings, review profit or loss and compare performance with the Nifty 50 before your next decision.', tag: 'Your progress' },
 ];
 export function HowItWorks() {
   return (
@@ -131,33 +131,44 @@ function StepArt({ i }) {
 }
 
 /* ---------- Features: MagicBento on a DotGrid ---------- */
-const OrdersVisual = () => (
-  <div className="bento-orders">
-    {[['Pending', 'Queued'], ['Processing', 'Worker 2'], ['Completed', 'Filled'], ['Rejected', 'No funds']].map(([a, b]) => (
-      <div key={a}><span>{a}</span><em className={a === 'Completed' ? 'up' : ''}>{b}</em></div>
+const WatchlistVisual = () => (
+  <div className="practice-visual">
+    <span className="preview-note">Watchlist preview</span>
+    {[['RELIANCE', 'Reliance Industries'], ['TCS', 'Tata Consultancy'], ['INFY', 'Infosys']].map(([symbol, name]) => (
+      <div className="practice-row" key={symbol}><b>{symbol}</b><span>{name}</span></div>
     ))}
   </div>
 );
-const LockVisual = () => (
-  <ol className="bento-league">
-    {[['Order A', 'holds lock'], ['Order B', 'waits'], ['Deposit', 'waits']].map(([n, r], i) => (
-      <li key={n} className={i === 0 ? 'me' : ''}><b>{i + 1}</b><span>{n}</span><em>{r}</em></li>
-    ))}
-  </ol>
+const PortfolioVisual = () => (
+  <div className="practice-visual portfolio-preview">
+    <span className="preview-note">Illustrative portfolio</span>
+    <div className="portfolio-total">₹1,02,450<span>Holdings value</span></div>
+    <div className="practice-row"><span>Invested</span><b>₹1,00,000</b></div>
+    <div className="practice-row"><span>Unrealised P/L</span><b className="preview-gain">+₹2,450</b></div>
+    <div className="practice-row"><span>Return on holdings</span><b className="preview-gain">+2.45%</b></div>
+    <p className="preview-note">Track each position alongside your total.</p>
+  </div>
 );
-const SchedulerVisual = () => (
-  <div className="bento-replay">
-    <span className="rp-date">Priority · FCFS · Round robin</span>
-    <div className="rp-bar"><i /><i /><i /><i /><i className="hide" /><i className="hide" /><i className="hide" /></div>
-    <span className="rp-hint">1 pick in 3 goes round robin</span>
+const ChartVisual = () => (
+  <div className="practice-visual">
+    <span className="preview-note">Price history</span>
+    <div className="chart-ranges"><span>1D</span><span>1W</span><span>1M</span><span>1Y</span></div>
+    <p className="preview-note">Candlesticks and volume</p>
+  </div>
+);
+const ReviewVisual = () => (
+  <div className="practice-visual">
+    <div className="practice-row"><b>Performance</b><span>Nifty 50 comparison</span></div>
+    <div className="practice-row"><b>Allocation</b><span>Position concentration</span></div>
+    <div className="practice-row"><b>Cash buffer</b><span>Room for your next trade</span></div>
   </div>
 );
 export function Features() {
   const items = [
-    { title: 'Live paper portfolio', description: 'Holdings valued at live prices, measured against the Nifty 50.', visual: 'analytics', colSpan: 2, rowSpan: 2 },
-    { title: 'Order lifecycle', description: 'Every order shows where it is, and why.', visual: <OrdersVisual /> },
-    { title: 'Per-user lock', description: 'One wallet change at a time, never two.', visual: <LockVisual /> },
-    { title: 'Fair scheduler', description: 'Priority with aging, so nobody waits forever.', visual: <SchedulerVisual />, colSpan: 2 },
+    { title: 'Know where you stand.', description: 'See your holdings, invested value and unrealised profit or loss together.', visual: <PortfolioVisual />, colSpan: 2, rowSpan: 2 },
+    { title: 'A watchlist of your own.', description: 'Keep the stocks you follow within reach.', visual: <WatchlistVisual /> },
+    { title: 'Put price in context.', description: 'Explore four chart ranges, from one day to one year.', visual: <ChartVisual /> },
+    { title: 'Make time to review.', description: 'Look beyond a single trade with portfolio analytics and a Nifty 50 comparison.', visual: <ReviewVisual />, colSpan: 2 },
   ];
   return (
     <MagicBento
@@ -204,7 +215,7 @@ export function RiskCalc() {
   return (
     <div className="risk">
       <div className="risk-controls">
-        <label className="risk-label" id="risk-label">Risk per trade</label>
+        <label className="risk-label" id="risk-label">Hypothetical loss per trade</label>
         <ElasticSlider
           defaultValue={1}
           startingValue={0.5}
@@ -217,12 +228,12 @@ export function RiskCalc() {
           formatValue={(v) => `${Number(v).toFixed(1)}%`}
           rangeColor={MINT}
           thumbColor="#ffffff"
-          ariaLabel="Risk per trade, percent of account"
+          ariaLabel="Hypothetical loss per trade, percent of account"
         />
       </div>
       <div className="risk-out">
         <div>
-          <span className="risk-k">Max loss per trade</span>
+          <span className="risk-k">Hypothetical loss per trade</span>
           <Counter value={perTrade} prefix="₹" decimals={0} fontSize={56} fontWeight={800} textColor={INK} />
         </div>
         <div>
@@ -255,19 +266,21 @@ export function AppPreview() {
         <svg viewBox="0 0 300 80" className="pv-spark" aria-hidden="true"><path d="M0 62 30 58 55 64 80 50 105 54 130 40 160 44 185 30 210 34 240 20 270 24 300 8" fill="none" stroke={MINT} strokeWidth="3" strokeLinejoin="round" /></svg>
       </Card>
       <Card className="pv-card">
-        <div className="pv-head"><span>Order ticket</span><em>Market</em></div>
-        <div className="pv-row"><b>TCS.NS</b><span>Buy · Market</span></div>
-        <div className="pv-row"><span>Qty 10</span><span>at live price</span></div>
-        <div className="pv-btn">Place paper order</div>
+        <div className="pv-head"><span>Watchlist</span><em>Preview</em></div>
+        <div className="pv-row"><b>RELIANCE</b><span>Reliance Industries</span></div>
+        <div className="pv-row"><b>TCS</b><span>Tata Consultancy</span></div>
+        <div className="pv-row"><b>INFY</b><span>Infosys</span></div>
       </Card>
       <Card className="pv-card">
-        <div className="pv-head"><span>Order status</span><em>Live</em></div>
-        <ol className="pv-board"><li><b>1</b> Pending <em>queued</em></li><li className="me"><b>2</b> Processing <em>worker</em></li><li><b>3</b> Completed <em>filled</em></li></ol>
+        <div className="pv-head"><span>Portfolio</span><em>Example</em></div>
+        <div className="pv-big">₹1,02,450</div>
+        <div className="pv-row"><span>Invested</span><b>₹1,00,000</b></div>
+        <div className="pv-row"><span>Unrealised P/L</span><b className="preview-gain">+₹2,450</b></div>
       </Card>
       <Card className="pv-card">
-        <div className="pv-head"><span>Holdings</span><em>Example</em></div>
-        <div className="pv-lesson">INFY · 12 shares, valued at the live price, with your P/L beside it.</div>
-        <div className="pv-progress"><i /></div>
+        <div className="pv-head"><span>Analytics</span><em>Preview</em></div>
+        <div className="pv-lesson">Returns. Allocation. Perspective.</div>
+        <div className="pv-sub">Review your holdings against the Nifty 50 and see how your capital is allocated.</div>
       </Card>
     </CardSwap>
   );

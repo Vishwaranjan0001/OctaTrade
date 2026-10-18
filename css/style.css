@@ -158,39 +158,28 @@ body::after {
 .btn-ink:hover { background: var(--accent); transform: translateY(-2px); }
 .hero-note { font-size: 0.86rem; color: var(--ink-soft); }
 
-/* Practice order: React Bits TearTicket (paper slip you can tear) */
+/* Market watch preview: real quotes with an honest unavailable state. */
 .hero-ticket-mount {
   position: absolute;
-  right: 7vw; top: 50%;
-  width: 270px;
-  transform: translateY(-54%);
+  right: 5vw; top: 50%;
+  width: clamp(280px, 25vw, 360px);
+  transform: translateY(-52%);
   z-index: 3;
-  font-family: var(--font-mono);
-  font-size: 0.78rem;
-  filter: drop-shadow(0 28px 34px rgba(60,48,20,0.22));
 }
-.tk { position: relative; height: 100%; padding: 26px 24px 20px; display: flex; flex-direction: column; }
-.tk-head { display: flex; justify-content: space-between; color: var(--ink-faint); text-transform: uppercase; letter-spacing: 0.12em; font-size: 0.64rem; }
-.tk-sym { display: flex; justify-content: space-between; align-items: baseline; margin: 18px 0 16px; padding-bottom: 16px; border-bottom: 1px dashed rgba(20,20,20,0.22); }
-.tk-sym strong { font-family: var(--font-display); font-weight: 800; font-size: 2rem; letter-spacing: -0.02em; }
-.tk-sym span { font-size: 0.95rem; font-weight: 500; font-variant-numeric: tabular-nums; }
-.tk-dl { display: grid; gap: 10px; }
-.tk-dl div { display: flex; justify-content: space-between; }
-.tk-dl dt { color: var(--ink-faint); }
-.tk-dl dd { font-weight: 500; }
-.tk-stamp {
-  position: absolute; right: 18px; bottom: 22px;
-  transform: rotate(-8deg);
-  padding: 6px 12px;
-  border: 2px solid var(--accent);
-  color: var(--accent);
-  font-weight: 700; font-size: 0.68rem;
-  letter-spacing: 0.14em; text-transform: uppercase;
-  border-radius: 4px;
-}
-.tk-stub { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; text-align: center; }
-.tk-stub-k { font-family: var(--font-display); font-weight: 800; font-size: 1.15rem; letter-spacing: -0.01em; }
-.tk-stub-v { font-size: 0.66rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faint); }
+.market-preview { background: var(--card); padding: 28px; border-radius: 6px; font-family: var(--font-body); }
+.market-preview-head { display: flex; justify-content: space-between; font-size: 14px; color: var(--ink-soft); }
+.market-preview-head span:last-child { color: var(--accent-ink, #136b4a); font-weight: 600; }
+.market-preview h2 { margin: 24px 0; font-family: var(--font-display); font-size: clamp(28px, 2.6vw, 38px); font-weight: 600; line-height: 1.05; letter-spacing: -.03em; }
+.market-preview-list { display: grid; gap: 4px; }
+.market-preview-list a { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 0; transition: color 150ms; }
+.market-preview-list a:hover { color: #136b4a; }
+.market-preview-list b { font-size: 14px; }
+.market-preview-list small { display: block; font-size: 12px; color: var(--ink-soft); margin-top: 4px; }
+.market-preview-price { font-size: 15px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.market-preview p { margin-top: 16px; font-size: 12px; line-height: 1.5; color: var(--ink-soft); }
+.market-preview-cta { display: flex; justify-content: space-between; margin-top: 24px; font-size: 15px; font-weight: 600; color: #136b4a; }
+.market-preview-cta:hover { text-decoration: underline; text-underline-offset: 4px; }
+@media (min-width: 901px) and (max-width: 1150px) { .hero-inner { max-width: 59%; } .hero-heading { font-size: 6.6vw; } }
 .up { color: var(--accent); }
 .down { color: var(--accent-2); }
 
