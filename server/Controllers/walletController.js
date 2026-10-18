@@ -3,6 +3,7 @@ import {
   depositFunds,
   getWalletTransactions
 } from "../services/walletServices.js";
+import { acquireLock, releaseLock } from "../concurrency/userLock.js";
 
 export async function getMyWallet(req, res) {
   try {
@@ -39,7 +40,21 @@ export async function depositToWallet(req, res) {
       });
     }
 
-    const wallet = await depositFunds(req.userId, amountPaise);
+    const lockToken = await acquireLock(req.userId);
+
+    if (!lockToken) {
+      return res.status(409).json({
+        message: "Another order is still being processed. Please try again."
+      });
+    }
+
+    let wallet;
+
+    try {
+      wallet = await depositFunds(req.userId, amountPaise);
+    } finally {
+      await releaseLock(req.userId, lockToken);
+    }
 
     if (!wallet) {
       return res.status(404).json({

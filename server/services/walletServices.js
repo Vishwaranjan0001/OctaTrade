@@ -1,12 +1,18 @@
+import mongoose from "mongoose";
 import { Wallet } from "../models/Wallet.js";
 import { WalletTransaction } from "../models/WalletTransaction.js";
 
-export async function createWallet(userId) {
-  const wallet = await Wallet.create({
-    userId: userId
-  });
+export async function createWallet(userId, session) {
+  const createdWallets = await Wallet.create(
+    [
+      {
+        userId: userId
+      }
+    ],
+    { session: session }
+  );
 
-  return wallet;
+  return createdWallets[0];
 }
 
 export async function getWalletByUserId(userId) {
@@ -26,27 +32,56 @@ export async function depositFunds(userId, amountPaise) {
     throw new Error("Amount must be a positive integer in paise");
   }
 
-  const wallet = await Wallet.findOne({
-    userId: userId
-  });
+  const session = await mongoose.startSession();
+  session.startTransaction();
 
-  if (!wallet) {
-    return null;
+  try {
+    const wallet = await Wallet.findOneAndUpdate(
+      {
+        userId: userId
+      },
+      {
+        $inc: {
+          availableBalancePaise: amountPaise
+        }
+      },
+      {
+        returnDocument: "after",
+        session: session
+      }
+    );
+
+    if (!wallet) {
+      await session.abortTransaction();
+      return null;
+    }
+
+    await WalletTransaction.create(
+      [
+        {
+          userId: userId,
+          walletId: wallet._id,
+          type: "DEPOSIT",
+          amountPaise: amountPaise,
+          availableBalanceAfterPaise: wallet.availableBalancePaise,
+          reservedBalanceAfterPaise: wallet.reservedBalancePaise
+        }
+      ],
+      { session: session }
+    );
+
+    await session.commitTransaction();
+
+    return wallet;
+  } catch (error) {
+    if (session.inTransaction()) {
+      await session.abortTransaction();
+    }
+
+    throw error;
+  } finally {
+    await session.endSession();
   }
-
-  wallet.availableBalancePaise += amountPaise;
-  await wallet.save();
-
-  await WalletTransaction.create({
-    userId: userId,
-    walletId: wallet._id,
-    type: "DEPOSIT",
-    amountPaise: amountPaise,
-    availableBalanceAfterPaise: wallet.availableBalancePaise,
-    reservedBalanceAfterPaise: wallet.reservedBalancePaise
-  });
-
-  return wallet;
 }
 
 export async function getWalletTransactions(userId) {

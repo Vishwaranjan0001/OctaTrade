@@ -1,0 +1,13 @@
+.git
+.claude
+**/node_modules
+islands/out
+**/.env
+**/.env.*
+**/*.log
+**/runtime
+qa
+keyframes
+sheets
+.DS_Store
+Thumbs.db

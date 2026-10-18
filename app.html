@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>OctaTrade · Trading desk</title>
+<meta name="description" content="Your OctaTrade paper-trading desk: virtual rupees, live NSE prices, market orders that settle in real time." />
+<link rel="icon" href="images/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT@9..144,300..900,0..100&family=Inter+Tight:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<script>try { var t = localStorage.getItem("octa.film.theme"); if (t) document.documentElement.dataset.theme = t; } catch (e) {}</script>
+<link rel="stylesheet" href="css/islands-home.css" />
+<link rel="stylesheet" href="css/desk.css" />
+<link rel="stylesheet" href="css/brand.css" />
+<script src="js/brand.js" defer></script>
+</head>
+<body>
+
+<div class="banner" id="backend-banner" role="alert" hidden>
+  The OctaTrade backend is not reachable. Start it in <code>OctaTrade/server</code> with <code>npm start</code> (API on port 3000), then reload.
+</div>
+
+<!-- ================= Sign in / register ================= -->
+<main class="auth" id="auth" hidden>
+  <div class="auth-dots" data-rb="dots" aria-hidden="true"></div>
+  <a class="logo auth-logo" href="index.html">
+    <svg class="brand-mark" width="36" height="36" viewBox="0 0 40 40" fill="none" aria-hidden="true">
+        <path class="brand-frame" d="M14 3.5h12L36.5 14v12L26 36.5H14L3.5 26V14Z" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/>
+        <path class="brand-trend" d="m11 26 7-8 5 4 7-10m-6 0h6v6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span class="brand-word">Octa<span class="brand-trade">Trade</span></span>
+  </a>
+  <section class="auth-card">
+    <p class="kicker">Your practice desk</p>
+    <h1 class="auth-title">Sign in to trade on paper.</h1>
+    <div class="tabs" role="tablist">
+      <button role="tab" class="tab" id="tab-login" aria-selected="true" type="button">Sign in</button>
+      <button role="tab" class="tab" id="tab-register" aria-selected="false" type="button">Create account</button>
+    </div>
+    <form id="auth-form" novalidate>
+      <label class="field" id="f-name" hidden><span>Name</span><input name="name" autocomplete="name" maxlength="60" /></label>
+      <label class="field"><span>Email</span><input name="email" type="email" autocomplete="email" required /></label>
+      <label class="field">
+        <span>Password</span>
+        <input name="password" type="password" autocomplete="current-password" minlength="8" required />
+        <small class="hint" id="pw-hint" hidden>At least 8 characters.</small>
+      </label>
+      <p class="err" id="auth-err" role="alert"></p>
+      <button class="btn btn-ink btn-wide" id="auth-submit" type="submit">Sign in</button>
+    </form>
+    <p class="fine">Virtual money only. Nothing here touches a real broker or bank.</p>
+  </section>
+</main>
+
+<!-- ================= App shell ================= -->
+<div class="shell" id="shell" hidden>
+  <aside class="sidebar" id="sidebar">
+    <a class="logo" href="index.html">
+      <svg class="brand-mark" width="36" height="36" viewBox="0 0 40 40" fill="none" aria-hidden="true">
+        <path class="brand-frame" d="M14 3.5h12L36.5 14v12L26 36.5H14L3.5 26V14Z" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/>
+        <path class="brand-trend" d="m11 26 7-8 5 4 7-10m-6 0h6v6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span class="brand-word">Octa<span class="brand-trade">Trade</span></span>
+    </a>
+    <span class="paper-chip">Paper account · virtual ₹</span>
+    <nav class="side-nav" aria-label="Main">
+      <a href="#dashboard" data-nav="dashboard">Dashboard</a>
+      <a href="#markets" data-nav="markets">Markets</a>
+      <a href="#trade" data-nav="trade">Trade</a>
+      <a href="#portfolio" data-nav="portfolio">Portfolio</a>
+      <a href="#orders" data-nav="orders">Orders</a>
+      <a href="#watchlist" data-nav="watchlist">Watchlist</a>
+      <a href="#analytics" data-nav="analytics">Analytics</a>
+      <a href="#activity" data-nav="activity">Activity</a>
+      <a href="#wallet" data-nav="wallet">Wallet</a>
+    </nav>
+    <nav class="side-nav side-nav--sub" aria-label="Account">
+      <a href="#notifications" data-nav="notifications">Notifications <em class="badge-count" id="notif-count" hidden>0</em></a>
+      <a href="#profile" data-nav="profile">Profile</a>
+      <a href="#settings" data-nav="settings">Settings</a>
+    </nav>
+    <div class="side-foot">
+      <span class="conn" id="conn" data-state="off"><i></i><span>Offline</span></span>
+      <button class="btn btn-ghost btn-sm" id="logout" type="button">Sign out</button>
+    </div>
+  </aside>
+
+  <header class="topbar">
+    <button class="menu-btn" id="menu-btn" type="button" aria-label="Open menu" aria-expanded="false">
+      <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    </button>
+    <form class="search" id="top-search" novalidate role="search">
+      <input id="top-search-input" placeholder="Search an NSE symbol, such as TCS" autocomplete="off" spellcheck="false" maxlength="20" aria-label="Search a symbol" />
+    </form>
+    <div class="top-right">
+      <span class="top-cash"><span class="muted">Buying power</span> <b id="top-cash">₹0.00</b></span>
+      <a class="avatar" href="#profile" id="avatar" aria-label="Profile">OT</a>
+    </div>
+  </header>
+  <div class="ticker" data-rb="ticker" aria-label="Watchlist prices"></div>
+
+  <main class="content" id="content">
+
+    <!-- Dashboard: information only -->
+    <section class="view" data-view="dashboard" hidden>
+      <div class="page-head">
+        <div><p class="kicker">Portfolio workspace</p><h1 class="page-title" data-rb="title" data-id="dash-title">Good day</h1><p class="muted">The latest from your paper-trading account.</p></div>
+        <div class="headline"><span class="kicker">Buying power</span><div class="headline-num" id="rb-balance">₹0.00</div></div>
+      </div>
+      <div class="metrics">
+        <div class="metric-mount" data-rb="metric" data-id="d-total" data-label="Portfolio value" data-sub="Holdings + cash"><div class="card metric"><span>Portfolio value</span><b>₹0.00</b><small>Holdings + cash</small></div></div>
+        <div class="metric-mount" data-rb="metric" data-id="d-ret" data-label="Total return" data-sub="0.00%"><div class="card metric"><span>Total return</span><b>₹0.00</b><small>0.00%</small></div></div>
+        <div class="metric-mount" data-rb="metric" data-id="d-inv" data-label="Invested amount" data-sub="0 active positions"><div class="card metric"><span>Invested amount</span><b>₹0.00</b><small>0 active positions</small></div></div>
+        <div class="metric-mount" data-rb="metric" data-id="d-res" data-label="Reserved for orders" data-sub="Held while orders run"><div class="card metric"><span>Reserved for orders</span><b>₹0.00</b><small>Held while orders run</small></div></div>
+      </div>
+      <div class="two-col">
+        <section class="card">
+          <div class="card-head"><h2>Portfolio performance</h2><span class="pill">Last 1 month</span></div>
+          <p class="muted legend"><i class="lg-you"></i>Holdings value <i class="lg-nifty"></i>NIFTY 50 (scaled)</p>
+          <div class="chart-box"><div id="d-chart" class="lw"></div><p class="chart-msg" id="d-chart-msg"></p></div>
+        </section>
+        <section class="card">
+          <div class="card-head"><h2>Recent activity</h2><a class="text-link" href="#orders">View all</a></div>
+          <div class="feed-mount" data-rb="feed" data-id="d-feed" data-empty="No orders yet."></div>
+        </section>
+      </div>
+      <div class="two-col">
+        <section class="card">
+          <div class="card-head"><h2>Top holdings</h2><a class="text-link" href="#portfolio">Portfolio</a></div>
+          <ul class="mini-list" id="d-top"><li class="empty">No holdings yet.</li></ul>
+        </section>
+        <section class="card">
+          <div class="card-head"><h2>Watchlist</h2><a class="text-link" href="#watchlist">Manage</a></div>
+          <ul class="mini-list" id="d-watch"><li class="empty">Your watchlist is empty.</li></ul>
+        </section>
+      </div>
+    </section>
+
+    <!-- Markets -->
+    <section class="view" data-view="markets" hidden>
+      <div class="page-head"><div><p class="kicker">Market intelligence</p><h1 class="page-title" data-rb="title">Live quote board</h1><p class="muted">Look up an NSE symbol and open it, or trade from your saved securities.</p></div><span class="pill pill-live"><span data-rb="shiny">Latest quote API</span></span></div>
+      <section class="card">
+        <div class="card-head"><h2>Find a security</h2></div>
+        <form class="inline-form" id="mk-form" novalidate>
+          <input id="mk-input" placeholder="TCS or TCS.NS" autocomplete="off" spellcheck="false" maxlength="20" aria-label="Symbol" />
+          <button class="btn btn-ink" type="submit">Open quote</button>
+        </form>
+        <p class="err" id="mk-err" role="alert"></p>
+      </section>
+      <section class="card">
+        <div class="card-head"><h2>Saved securities</h2><a class="text-link" href="#watchlist">Manage watchlist</a></div>
+        <div id="mk-tiles" data-rb="tiles"></div>
+      </section>
+    </section>
+
+    <!-- Trade terminal -->
+    <section class="view" data-view="trade" hidden>
+      <div class="trade-grid">
+        <aside class="card watch">
+          <div class="card-head"><h2>Watchlist</h2><span class="muted" id="w-count"></span></div>
+          <form id="watch-form" class="watch-form" novalidate>
+            <input id="watch-input" placeholder="Filter or open a symbol" autocomplete="off" spellcheck="false" maxlength="20" aria-label="Filter or open a symbol" />
+          </form>
+          <ul class="watch-list" id="watch-list"></ul>
+        </aside>
+        <section class="trade-main">
+          <div class="card">
+            <div class="t-head">
+              <div class="t-id">
+                <span class="sym-badge" id="t-badge">TC</span>
+                <div>
+                  <div class="t-title"><h1 id="t-sym">TCS.NS</h1><span class="pill" id="t-state">Loading quote</span></div>
+                  <p class="muted">NSE · <span id="t-cur">INR</span></p>
+                </div>
+              </div>
+              <div class="t-right">
+                <div class="t-price-wrap"><div class="t-price"><span data-rb="price" data-id="t-price">—</span></div><p class="muted" id="t-chg">&nbsp;</p></div>
+                <button class="star" id="t-star" type="button" aria-pressed="false" aria-label="Add to watchlist">
+                  <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8L3.5 9.7l5.9-.9z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
+                </button>
+              </div>
+            </div>
+            <div class="t-chart-top">
+              <p class="muted" id="t-chart-note">Price history · Yahoo Finance</p>
+              <div class="ranges" id="t-ranges" role="tablist" aria-label="Candle range">
+                <button class="range is-on" data-range="1D" type="button">1D</button>
+                <button class="range" data-range="1W" type="button">1W</button>
+                <button class="range" data-range="1M" type="button">1M</button>
+                <button class="range" data-range="1Y" type="button">1Y</button>
+              </div>
+            </div>
+            <div class="candle-wrap"><div id="candles" class="lw"></div><p class="chart-msg" id="candle-msg"></p><div class="candle-tip" id="candle-tip" hidden></div></div>
+          </div>
+          <div class="card">
+            <div class="card-head"><h2>Orders &amp; positions</h2><a class="text-link" href="#orders">Open order book</a></div>
+            <div class="table-wrap">
+              <table class="tbl">
+                <thead><tr><th>Symbol</th><th>Side</th><th class="r">Qty</th><th class="r">Price</th><th>Time</th><th class="r">Status</th></tr></thead>
+                <tbody id="t-orders"><tr class="empty"><td colspan="6">No orders yet.</td></tr></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+        <aside class="trade-side">
+          <div class="ticket-host" data-host="trade"></div>
+          <section class="card">
+            <div class="card-head"><h2>Latest quote</h2></div>
+            <div class="quote-box"><span class="muted">Price</span><b><span data-rb="price" data-id="t-q-price">—</span></b><span class="muted" id="t-q-cur">Currency unavailable</span></div>
+            <div class="pos-box" id="t-pos" hidden></div>
+            <p class="fine">Quote may be delayed (cached up to 5 s).</p>
+          </section>
+        </aside>
+      </div>
+    </section>
+
+    <!-- Stock details -->
+    <section class="view" data-view="stock" hidden>
+      <a class="back" href="#markets">← Back to markets</a>
+      <div class="page-head">
+        <div><p class="kicker">Security overview</p><h1 class="page-title" id="s-sym-h" data-rb="title" data-id="s-sym">Security</h1><p class="muted">Latest quote and simulated execution in one view.</p></div>
+        <button class="btn btn-ghost" id="s-star" type="button" aria-pressed="false">Add to watchlist</button>
+      </div>
+      <div class="stock-grid">
+        <div class="stack">
+          <section class="card">
+            <div class="summary-top">
+              <div><span class="kicker">Latest market quote</span><div class="q-row"><span class="q-price"><span data-rb="price" data-id="s-price">—</span></span><span class="q-chg" id="s-chg"></span></div><p class="muted" id="s-cur">Currency unavailable</p></div>
+              <div class="ranges" id="s-ranges" role="tablist" aria-label="Chart range">
+                <button class="range" data-range="1D" type="button">1D</button>
+                <button class="range" data-range="1W" type="button">1W</button>
+                <button class="range is-on" data-range="1M" type="button">1M</button>
+                <button class="range" data-range="1Y" type="button">1Y</button>
+              </div>
+            </div>
+            <div class="chart-box tall"><div id="s-chart" class="lw"></div><p class="chart-msg" id="s-chart-msg"></p></div>
+          </section>
+          <section class="card">
+            <div class="card-head"><h2>Instrument information</h2></div>
+            <div class="info-grid">
+              <div><span class="muted">Exchange</span><b id="s-ex">—</b></div>
+              <div><span class="muted">Currency</span><b id="s-cur2">—</b></div>
+              <div><span class="muted">History</span><b>Yahoo Finance</b></div>
+              <div><span class="muted">Your position</span><b id="s-pos">None</b></div>
+            </div>
+          </section>
+        </div>
+        <div class="ticket-host" data-host="stock"></div>
+      </div>
+    </section>
+
+    <!-- Portfolio -->
+    <section class="view" data-view="portfolio" hidden>
+      <div class="page-head"><div><p class="kicker">Portfolio intelligence</p><h1 class="page-title" data-rb="title">Your portfolio</h1><p class="muted">Where your virtual capital is working, what drives returns and where risk is concentrated.</p></div><a class="btn btn-ink" href="#trade">Trade securities</a></div>
+      <div class="metrics">
+        <div class="metric-mount" data-rb="metric" data-id="p-value" data-label="Market value" data-sub="0 positions"><div class="card metric"><span>Market value</span><b>₹0.00</b><small>0 positions</small></div></div>
+        <div class="metric-mount" data-rb="metric" data-id="p-inv" data-label="Total invested" data-sub="Cost basis"><div class="card metric"><span>Total invested</span><b>₹0.00</b><small>Cost basis</small></div></div>
+        <div class="metric-mount" data-rb="metric" data-id="p-pl" data-label="Total P&amp;L" data-sub="0.00%"><div class="card metric"><span>Total P&amp;L</span><b>₹0.00</b><small>0.00%</small></div></div>
+        <div class="metric-mount" data-rb="metric" data-id="p-cash" data-label="Available cash" data-sub="Buying power"><div class="card metric"><span>Available cash</span><b>₹0.00</b><small>Buying power</small></div></div>
+      </div>
+      <div class="two-col wide-left">
+        <section class="card">
+          <div class="card-head"><h2>Growth of ₹1 invested</h2><span class="pill">Last 1 month</span></div>
+          <p class="muted legend"><i class="lg-you"></i>Current holdings <i class="lg-nifty"></i>NIFTY 50</p>
+          <div class="chart-box"><div id="p-growth" class="lw"></div><p class="chart-msg" id="p-growth-msg"></p></div>
+        </section>
+        <section class="card">
+          <div class="card-head"><h2>Asset allocation</h2><span class="muted">Position weights</span></div>
+          <div class="donut"><canvas id="p-alloc" role="img" aria-label="Allocation by position"></canvas><div class="donut-center"><span class="muted">Equities</span><b id="p-alloc-total">₹0</b></div></div>
+          <ul class="legend-list" id="p-legend"><li class="empty">No allocation yet. Complete your first paper trade.</li></ul>
+        </section>
+      </div>
+      <section class="card">
+        <div class="card-head"><h2>Positions</h2><span class="pill pill-live"><span data-rb="shiny">Live quotes</span></span></div>
+        <div class="table-wrap">
+          <table class="tbl sortable">
+            <thead><tr>
+              <th><button type="button" data-sort="symbol">Security</button></th>
+              <th class="r"><button type="button" data-sort="quantity">Qty</button></th>
+              <th class="r"><button type="button" data-sort="averageBuyPricePaise">Avg. price</button></th>
+              <th class="r"><button type="button" data-sort="currentPricePaise">Market price</button></th>
+              <th class="r"><button type="button" data-sort="investedValuePaise">Invested</button></th>
+              <th class="r"><button type="button" data-sort="currentValuePaise">Current value</button></th>
+              <th class="r"><button type="button" data-sort="profitLossPaise">Total P&amp;L</button></th>
+              <th></th>
+            </tr></thead>
+            <tbody id="p-rows"><tr class="empty"><td colspan="8">Your portfolio is ready. Place a paper trade to create your first position.</td></tr></tbody>
+          </table>
+        </div>
+      </section>
+    </section>
+
+    <!-- Orders -->
+    <section class="view" data-view="orders" hidden>
+      <div class="page-head"><div><p class="kicker">Execution ledger</p><h1 class="page-title" data-rb="title">Orders</h1><p class="muted">Every simulated order and how it ended.</p></div><a class="btn btn-ink" href="#trade">New order</a></div>
+      <section class="card">
+        <div class="seg" id="o-tabs" role="tablist">
+          <button class="seg-btn is-on" data-tab="all" type="button">All orders</button>
+          <button class="seg-btn" data-tab="executed" type="button">Executed</button>
+          <button class="seg-btn" data-tab="rejected" type="button">Rejected</button>
+          <button class="seg-btn" data-tab="open" type="button">Open orders</button>
+        </div>
+        <div class="filters">
+          <input id="o-search" placeholder="Search by symbol" autocomplete="off" aria-label="Search orders by symbol" />
+          <div class="seg seg-sm" id="o-side">
+            <button class="seg-btn is-on" data-side="ALL" type="button">All</button>
+            <button class="seg-btn" data-side="BUY" type="button">Buy</button>
+            <button class="seg-btn" data-side="SELL" type="button">Sell</button>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table class="tbl">
+            <thead><tr><th>Order</th><th>Side</th><th>Type</th><th class="r">Qty</th><th class="r">Exec. price</th><th class="r">Total</th><th class="r">Status</th></tr></thead>
+            <tbody id="o-rows"><tr class="empty"><td colspan="7">No orders yet.</td></tr></tbody>
+          </table>
+        </div>
+      </section>
+    </section>
+
+    <!-- Watchlist -->
+    <section class="view" data-view="watchlist" hidden>
+      <div class="page-head"><div><p class="kicker">Personal market</p><h1 class="page-title" data-rb="title">Watchlist</h1><p class="muted">Keep the securities you care about together, and go from watching to trading in one step.</p></div></div>
+      <section class="card">
+        <div class="card-head"><h2>Add an NSE symbol</h2></div>
+        <form class="inline-form" id="wl-add" novalidate>
+          <input id="wl-add-input" placeholder="TCS or TCS.NS" autocomplete="off" spellcheck="false" maxlength="20" aria-label="Symbol to add" />
+          <button class="btn btn-ink" type="submit">Add</button>
+        </form>
+        <p class="err" id="wl-err" role="alert"></p>
+      </section>
+      <section class="card">
+        <div class="card-head"><h2>My securities</h2><input class="mini-search" id="wl-filter" placeholder="Filter symbols" autocomplete="off" aria-label="Filter watchlist" /></div>
+        <div class="table-wrap">
+          <table class="tbl">
+            <thead><tr><th>Security</th><th class="r">Latest price</th><th>Currency</th><th class="r">Actions</th></tr></thead>
+            <tbody id="wl-rows"></tbody>
+          </table>
+        </div>
+      </section>
+    </section>
+
+    <!-- Analytics -->
+    <section class="view" data-view="analytics" hidden>
+      <div class="page-head"><div><p class="kicker">Performance lab</p><h1 class="page-title" data-rb="title">Portfolio analytics</h1><p class="muted">Return and concentration from your current portfolio.</p></div></div>
+      <div class="metrics">
+        <div class="metric-mount" data-rb="metric" data-id="a-ret" data-label="Net return" data-sub="₹0.00"><div class="card metric"><span>Net return</span><b>0.00%</b><small>₹0.00</small></div></div>
+        <div class="metric-mount" data-rb="metric" data-id="a-large" data-label="Largest position" data-sub="No holdings"><div class="card metric"><span>Largest position</span><b>—</b><small>No holdings</small></div></div>
+        <div class="metric-mount" data-rb="metric" data-id="a-fill" data-label="Fill rate" data-sub="Orders completed"><div class="card metric"><span>Fill rate</span><b>—</b><small>Orders completed</small></div></div>
+        <div class="metric-mount" data-rb="metric" data-id="a-cash" data-label="Cash ratio" data-sub="Cash share of total value"><div class="card metric"><span>Cash ratio</span><b>—</b><small>Cash share of total value</small></div></div>
+      </div>
+      <div class="two-col wide-left">
+        <section class="card">
+          <div class="card-head"><h2>Equity curve</h2><span class="pill">Last 1 month</span></div>
+          <p class="muted legend"><i class="lg-you"></i>Holdings in ₹ <i class="lg-nifty"></i>NIFTY 50 (scaled)</p>
+          <div class="chart-box"><div id="a-chart" class="lw"></div><p class="chart-msg" id="a-chart-msg"></p></div>
+        </section>
+        <section class="card">
+          <div class="card-head"><h2>Concentration</h2></div>
+          <div class="donut"><canvas id="a-donut" role="img" aria-label="Concentration"></canvas><div class="donut-center"><span class="muted">Largest</span><b id="a-donut-c">0%</b></div></div>
+          <ul class="legend-list" id="a-legend"></ul>
+        </section>
+      </div>
+      <section class="card">
+        <div class="card-head"><h2>Risk observations</h2><span class="muted">From current holdings</span></div>
+        <ul class="obs" id="a-obs"></ul>
+      </section>
+    </section>
+
+    <!-- Activity -->
+    <section class="view" data-view="activity" hidden>
+      <div class="page-head"><div><p class="kicker">Account timeline</p><h1 class="page-title" data-rb="title">Activity</h1><p class="muted">One timeline for simulated trades and cash movements.</p></div></div>
+      <section class="card">
+        <div class="filters">
+          <input id="ac-search" placeholder="Search activity" autocomplete="off" aria-label="Search activity" />
+          <div class="seg seg-sm" id="ac-kind">
+            <button class="seg-btn is-on" data-kind="all" type="button">All</button>
+            <button class="seg-btn" data-kind="order" type="button">Trades</button>
+            <button class="seg-btn" data-kind="cash" type="button">Cash</button>
+          </div>
+        </div>
+        <div class="feed-mount" data-rb="feed" data-id="ac-list" data-empty="No activity yet."></div>
+      </section>
+    </section>
+
+    <!-- Wallet -->
+    <section class="view" data-view="wallet" hidden>
+      <div class="page-head"><div><p class="kicker">Virtual capital</p><h1 class="page-title" data-rb="title">Wallet &amp; buying power</h1><p class="muted">Fund your paper account and follow every cash movement.</p></div><span class="pill pill-live"><span data-rb="shiny">Paper funds</span></span></div>
+      <div class="metrics">
+        <div class="metric-mount" data-rb="metric" data-id="w-avail" data-label="Available balance" data-sub="Available now"><div class="card metric"><span>Available balance</span><b>₹0.00</b><small>Available now</small></div></div>
+        <div class="metric-mount" data-rb="metric" data-id="w-res" data-label="Reserved balance" data-sub="No open reservations"><div class="card metric"><span>Reserved balance</span><b>₹0.00</b><small>No open reservations</small></div></div>
+        <div class="metric-mount" data-rb="metric" data-id="w-dep" data-label="Deposits" data-sub="Lifetime paper funds"><div class="card metric"><span>Deposits</span><b>₹0.00</b><small>Lifetime paper funds</small></div></div>
+        <div class="metric-mount" data-rb="metric" data-id="w-moves" data-label="Trade movements" data-sub="Recorded settlements"><div class="card metric"><span>Trade movements</span><b>0</b><small>Recorded settlements</small></div></div>
+      </div>
+      <div class="two-col narrow-left">
+        <section class="card">
+          <span class="pill">Instant paper funding</span>
+          <h2 class="card-title">Add virtual funds</h2>
+          <p class="muted">Choose an amount to test strategies at a realistic scale.</p>
+          <form id="deposit-form" class="deposit" novalidate>
+            <label class="field"><span>Amount in ₹</span><input name="amount" id="d-amt" type="number" min="1" step="0.01" inputmode="decimal" value="50000" /></label>
+            <div class="chips">
+              <button type="button" class="chip" data-amt="25000">+₹25,000</button>
+              <button type="button" class="chip" data-amt="50000">+₹50,000</button>
+              <button type="button" class="chip" data-amt="100000">+₹1,00,000</button>
+            </div>
+            <p class="err" id="dep-err" role="alert"></p>
+            <button class="btn btn-ink btn-wide" id="dep-submit" type="submit">Add virtual funds</button>
+            <p class="fine">No payment method needed. These funds have no monetary value.</p>
+          </form>
+        </section>
+        <section class="card">
+          <div class="card-head"><h2>Cash ledger</h2><span class="pill" id="w-entries">0 entries</span></div>
+          <div class="table-wrap">
+            <table class="tbl">
+              <thead><tr><th>Movement</th><th>Date</th><th class="r">Amount</th><th class="r">Balance after</th></tr></thead>
+              <tbody id="w-rows"><tr class="empty"><td colspan="4">No movements yet.</td></tr></tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+    </section>
+
+    <!-- Notifications -->
+    <section class="view" data-view="notifications" hidden>
+      <div class="page-head"><div><p class="kicker">Signal centre</p><h1 class="page-title" data-rb="title">Notifications</h1><p class="muted">Order updates that reached this browser over the live socket.</p></div><button class="btn btn-ghost" id="n-clear" type="button">Clear all</button></div>
+      <section class="card"><div class="feed-mount" data-rb="feed" data-id="n-list" data-empty="No notifications yet. Order fills and rejections will appear here."></div></section>
+    </section>
+
+    <!-- Profile -->
+    <section class="view" data-view="profile" hidden>
+      <div class="page-head"><div><p class="kicker">Account</p><h1 class="page-title" data-rb="title">Trader profile</h1><p class="muted">Your OctaTrade identity and a record of your simulated activity.</p></div></div>
+      <section class="card profile-card">
+        <span class="avatar avatar-lg" id="pr-initials">OT</span>
+        <div><h2 class="card-title" id="pr-name">—</h2><p class="muted" id="pr-email">—</p></div>
+        <span class="pill pill-live"><span data-rb="shiny">Signed in</span></span>
+      </section>
+      <div class="metrics three">
+        <div class="metric-mount" data-rb="metric" data-id="pr-value" data-label="Portfolio value" data-sub="0 holdings"><div class="card metric"><span>Portfolio value</span><b>₹0.00</b><small>0 holdings</small></div></div>
+        <div class="metric-mount" data-rb="metric" data-id="pr-done" data-label="Completed orders" data-sub="0 total orders"><div class="card metric"><span>Completed orders</span><b>0</b><small>0 total orders</small></div></div>
+        <div class="metric-mount" data-rb="metric" data-id="pr-session" data-label="Session" data-sub="Signed bearer token"><div class="card metric"><span>Session</span><b>Protected</b><small>Signed bearer token</small></div></div>
+      </div>
+      <div class="two-col">
+        <section class="card">
+          <div class="card-head"><h2>Personal information</h2></div>
+          <div class="info-grid one">
+            <div><span class="muted">Full name</span><b id="pr-name2">—</b></div>
+            <div><span class="muted">Email address</span><b id="pr-email2">—</b></div>
+            <div><span class="muted">Trading mode</span><b>Paper trading</b></div>
+          </div>
+        </section>
+        <section class="card">
+          <div class="card-head"><h2>Account boundaries</h2></div>
+          <ul class="obs">
+            <li><b>Virtual money</b><span>Orders use virtual INR and update your simulated wallet and holdings.</span></li>
+            <li><b>Market orders only</b><span>Limit, stop-loss and real brokerage execution are not connected.</span></li>
+            <li><b>Protected data</b><span>Your wallet, orders and portfolio need your sign-in token.</span></li>
+          </ul>
+        </section>
+      </div>
+    </section>
+
+    <!-- Settings -->
+    <section class="view" data-view="settings" hidden>
+      <div class="page-head"><div><p class="kicker">Workspace</p><h1 class="page-title" data-rb="title">Settings</h1><p class="muted">Personalise the desk without changing your trading records.</p></div></div>
+      <div class="two-col">
+        <section class="card">
+          <div class="card-head"><h2>Appearance</h2></div>
+          <div class="theme-pick" id="theme-pick">
+            <button type="button" data-theme-opt="light"><b>Light</b><span>Paper and ink</span></button>
+            <button type="button" data-theme-opt="dark"><b>Dark</b><span>Focused terminal contrast</span></button>
+          </div>
+        </section>
+        <section class="card">
+          <div class="card-head"><h2>Preferences</h2><span class="muted">Saved in this browser</span></div>
+          <div class="toggles">
+            <label class="toggle"><span><b>Order update pop-ups</b><small>Show a toast when an order fills or is rejected</small></span><input type="checkbox" data-pref="toasts" /></label>
+            <label class="toggle"><span><b>Compact values</b><small>Show ₹1.2L / ₹3.4Cr in metric cards</small></span><input type="checkbox" data-pref="compact" /></label>
+          </div>
+        </section>
+        <section class="card">
+          <div class="card-head"><h2>Security</h2></div>
+          <ul class="kv"><li><span>Private API authentication</span><span class="pill pill-live"><span data-rb="shiny">Enabled</span></span></li><li><span>Paper trading mode</span><span class="pill">Active</span></li></ul>
+        </section>
+        <section class="card">
+          <div class="card-head"><h2>Data connections</h2></div>
+          <ul class="kv">
+            <li><span>OctaTrade API</span><span class="pill" id="st-api">Checking</span></li>
+            <li><span>Live order socket</span><span class="pill" id="st-socket">Checking</span></li>
+            <li><span>Market data</span><span class="pill">Yahoo Finance</span></li>
+          </ul>
+        </section>
+      </div>
+    </section>
+
+    <footer class="desk-foot">OctaTrade is a paper-trading simulator for learning. Virtual money only. Not investment advice. Prices from Yahoo Finance may be delayed.</footer>
+  </main>
+</div>
+
+<!-- The one order ticket. js/desk.js moves it into the Trade or Stock page. -->
+<template id="ticket-tpl">
+  <section class="card ticket" id="ticket-card">
+    <div class="card-head"><h2>Order ticket</h2><span class="muted">Market</span></div>
+    <form id="order-form" novalidate>
+      <div class="side-toggle" role="radiogroup" aria-label="Side">
+        <label><input type="radio" name="side" value="BUY" checked /><span>Buy</span></label>
+        <label><input type="radio" name="side" value="SELL" /><span>Sell</span></label>
+      </div>
+      <label class="field">
+        <span>NSE symbol</span>
+        <input name="symbol" id="o-symbol" value="TCS" autocomplete="off" maxlength="20" spellcheck="false" />
+        <small class="hint">".NS" is added if you leave it out, such as TCS or INFY.</small>
+      </label>
+      <label class="field">
+        <span>Quantity (whole shares)</span>
+        <input name="quantity" id="o-qty" type="number" min="1" step="1" value="1" inputmode="numeric" />
+      </label>
+      <div class="qty-mount" data-rb="qty"></div>
+      <div class="est"><span>Estimated value</span><b id="o-est">—</b></div>
+      <div class="est"><span id="o-power-k">Buying power</span><b id="o-power">—</b></div>
+      <p class="err" id="order-err" role="alert"></p>
+      <button class="btn btn-ink btn-wide" id="order-submit" type="submit">Place buy order</button>
+      <div class="hold-mount" data-rb="hold" hidden></div>
+      <p class="fine">Fills at the live price when a worker picks it up. No limit or stop orders yet.</p>
+    </form>
+  </section>
+</template>
+
+<div class="scrim" id="scrim" hidden></div>
+<div id="toast-host" aria-live="polite"></div>
+<div id="rb-spark" aria-hidden="true"></div>
+
+<script src="/socket.io/socket.io.js" defer></script>
+<script src="js/islands-home.js" defer></script>
+<script src="js/desk.js" defer></script>
+</body>
+</html>

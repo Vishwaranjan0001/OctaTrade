@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>OctaTrade · Paper trading on live NSE prices</title>
+<meta name="description" content="OctaTrade is a paper-trading simulator. Practise on live NSE prices with virtual rupees, on an order engine built like a real broker's back office." />
+<link rel="icon" href="images/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT@9..144,300..900,0..100&family=Inter+Tight:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/islands-landing.css" />
+<link rel="stylesheet" href="css/style.css" />
+<link rel="stylesheet" href="css/after.css" />
+<link rel="stylesheet" href="css/brand.css" />
+<script src="js/brand.js" defer></script>
+</head>
+<body>
+
+<!-- 1. Loader (progress is fed by real frame decoding) -->
+<div id="loader">
+  <div class="loader-brand logo"><svg class="brand-mark" width="36" height="36" viewBox="0 0 40 40" fill="none" aria-hidden="true">
+        <path class="brand-frame" d="M14 3.5h12L36.5 14v12L26 36.5H14L3.5 26V14Z" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/>
+        <path class="brand-trend" d="m11 26 7-8 5 4 7-10m-6 0h6v6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span class="brand-word">Octa<span class="brand-trade">Trade</span></span></div>
+  <div id="loader-bar"><span id="loader-bar-fill"></span></div>
+  <div id="loader-percent">0%</div>
+</div>
+
+<!-- 2. Header: difference-blend over the film, solid paper bar after it (js/app.js initHeaderMode) -->
+<header class="site-header">
+  <nav>
+    <a class="logo" href="#top" data-scroll-to="0">
+      <svg class="brand-mark" width="36" height="36" viewBox="0 0 40 40" fill="none" aria-hidden="true">
+        <path class="brand-frame" d="M14 3.5h12L36.5 14v12L26 36.5H14L3.5 26V14Z" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/>
+        <path class="brand-trend" d="m11 26 7-8 5 4 7-10m-6 0h6v6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span class="brand-word">Octa<span class="brand-trade">Trade</span></span>
+    </a>
+    <ul>
+      <!-- data-scroll-to = fraction of the reel; data-scroll-el = id of a section after the film -->
+      <li><a href="#act-a" data-scroll-to="0.11">Wallet</a></li>
+      <li><a href="#act-b" data-scroll-to="0.4">Engine</a></li>
+      <li><a href="#act-c" data-scroll-to="0.64">Orders</a></li>
+      <li><a href="#features" data-scroll-el="features">Features</a></li>
+      <li><a href="#faq" data-scroll-el="faq">FAQ</a></li>
+      <li><a class="nav-cta" href="app.html">Start trading</a></li>
+    </ul>
+  </nav>
+</header>
+
+<!-- 3. Hero (standalone 100vh) -->
+<section class="hero-standalone" id="top">
+  <div class="hero-inner">
+    <span class="section-label">Paper trading · NSE · ₹0 real money</span>
+    <!-- React Bits SplitText re-renders these two lines after the loader (islands/landing.jsx HeroHeading) -->
+    <h1 class="hero-heading" id="rb-hero-heading" aria-label="Trade real markets. Risk nothing.">
+      <span class="hh-line">Trade real markets.</span>
+      <span class="hh-line hero-accent">Risk nothing.</span>
+    </h1>
+    <p class="hero-tagline">OctaTrade fills your practice orders at live NSE prices with virtual rupees, on an engine built like a real broker's back office.</p>
+    <div class="hero-actions">
+      <div id="rb-hero-cta" class="magnet-mount"><a class="btn btn-ink" href="app.html">Start trading</a></div>
+      <span class="hero-note">Virtual money only. Free to use.</span>
+    </div>
+  </div>
+
+  <!-- Signature object: a tearable practice order ticket (React Bits TearTicket). Hidden under 900px. -->
+  <aside class="hero-ticket-mount" id="rb-ticket" aria-label="A practice order ticket you can tear"></aside>
+
+  <!-- React Bits ScrollVelocity proof strip -->
+  <div class="hero-tape" id="rb-tape" aria-hidden="true"></div>
+  <div class="scroll-indicator">
+    <span>Scroll</span>
+    <svg width="14" height="22" viewBox="0 0 14 22" fill="none" aria-hidden="true">
+      <path d="M7 1v20m0 0l-6-6m6 6l6-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+    </svg>
+  </div>
+</section>
+
+<!-- 4. Canvas (revealed by a circle-wipe while the hero scrolls away) -->
+<div class="canvas-wrap">
+  <canvas id="canvas"></canvas>
+</div>
+
+<!-- 5. Dark overlay (stats window only) -->
+<div id="dark-overlay"></div>
+
+<!-- 6. Marquee: lives in a band under the stats, never over section copy -->
+<div class="marquee-wrap" data-enter="46" data-leave="58">
+  <div class="marquee-text">Trade without fear · OctaTrade · Trade without fear · OctaTrade · Trade without fear ·</div>
+</div>
+
+<!-- 7. Scroll container: four-act film, FRAME_SPEED 1.12
+     film acts in reel %: A 0-22 · B 22-45 · C 45-67 · D 67-89 -->
+<div id="scroll-container">
+
+  <section id="act-a" class="scroll-section section-content align-left"
+           data-enter="5" data-leave="18" data-animation="slide-left">
+    <div class="section-inner">
+      <span class="section-label">001 / Wallet</span>
+      <h2 class="section-heading">Virtual rupees, real prices.</h2>
+      <p class="section-body">Every new wallet starts with ₹1,00,000 of practice money, and you can add more. Balances are kept in paise, so they never drift by a fraction of a rupee.</p>
+    </div>
+  </section>
+
+  <section id="act-b" class="scroll-section section-content align-right"
+           data-enter="23" data-leave="33" data-animation="slide-right">
+    <div class="section-inner">
+      <span class="section-label">002 / Engine</span>
+      <h2 class="section-heading">Open the engine up.</h2>
+      <p class="section-body">Your order does not run inside the web request. It waits in a Redis queue, and three worker processes pick it up, the way a broker's back office does.</p>
+    </div>
+  </section>
+
+  <section id="act-b2" class="scroll-section section-content align-left"
+           data-enter="36" data-leave="44" data-animation="clip-reveal">
+    <div class="section-inner">
+      <span class="section-label">003 / Scheduler</span>
+      <h2 class="section-heading">Fair to every trader.</h2>
+      <p class="section-body">The scheduler mixes priority, first come first served and round robin, so one busy user cannot starve everyone else. Waiting orders age upward.</p>
+    </div>
+  </section>
+
+  <!-- Stats: real product facts only. CountUp mounts on .stat-number[data-count]. -->
+  <section class="scroll-section section-stats"
+           data-enter="47" data-leave="57" data-animation="stagger-up">
+    <div class="stats-grid">
+      <div class="stat">
+        <span class="stat-value"><span class="stat-prefix">₹</span><span class="stat-number" data-count="0" data-separator=",">0</span></span>
+        <span class="stat-label">Real money at risk</span>
+      </div>
+      <div class="stat">
+        <span class="stat-value"><span class="stat-number" data-count="3">3</span><span class="stat-suffix"></span></span>
+        <span class="stat-label">Worker processes fill orders</span>
+      </div>
+      <div class="stat">
+        <span class="stat-value"><span class="stat-number" data-count="4">4</span></span>
+        <span class="stat-label">Chart ranges, 1D to 1Y</span>
+      </div>
+      <div class="stat">
+        <span class="stat-value"><span class="stat-number" data-count="5">5</span><span class="stat-suffix"> s</span></span>
+        <span class="stat-label">Oldest a cached quote can be</span>
+      </div>
+    </div>
+  </section>
+
+  <section id="act-c" class="scroll-section section-content align-left"
+           data-enter="60" data-leave="69" data-animation="rotate-in">
+    <div class="section-inner">
+      <span class="section-label">004 / Your move</span>
+      <h2 class="section-heading">One tap. One order.</h2>
+      <p class="section-body">Every order carries an idempotency key, so a double tap or a retry on a weak connection never buys twice.</p>
+    </div>
+  </section>
+
+  <section id="act-d" class="scroll-section section-content align-left"
+           data-enter="73" data-leave="84" data-animation="scale-up">
+    <div class="section-inner">
+      <span class="section-label">005 / Outcome</span>
+      <h2 class="section-heading">Watch it settle, live.</h2>
+      <p class="section-body">A per-user lock and atomic holding updates keep your wallet and shares in step, and the status reaches your screen over a live socket.</p>
+    </div>
+  </section>
+
+  <section class="scroll-section section-cta"
+           data-enter="89" data-leave="100" data-animation="fade-up" data-persist="true">
+    <div class="section-inner cta-inner">
+      <span class="section-label">Your paper account</span>
+      <h2 class="section-heading">Your practice desk is open.</h2>
+      <p class="section-body">Sign up, get ₹1,00,000 of virtual rupees and place your first market order in under a minute.</p>
+      <div id="rb-cta" class="magnet-mount"><a class="cta-button" href="app.html">Start trading →</a></div>
+    </div>
+  </section>
+
+</div>
+
+<!-- 8. After the film: a paper curtain that slides over the last frame.
+     Each #rb-* mount holds plain-HTML fallback; islands/sections.jsx replaces it. -->
+<main class="after" id="after">
+
+  <section class="band manifesto" aria-label="Why OctaTrade">
+    <p class="kicker">Why OctaTrade</p>
+    <div id="rb-manifesto"><p class="manifesto-text">Most people learn to trade by losing real money. OctaTrade lets you make those mistakes with virtual rupees on live prices, and lets you see the engine that runs every order.</p></div>
+  </section>
+
+  <section class="band markets" aria-label="Any NSE stock Yahoo Finance can quote.">
+    <div class="band-head">
+      <p class="kicker">Markets</p>
+      <h2 class="band-title">Any NSE stock Yahoo Finance can quote.</h2>
+    </div>
+    <div id="rb-markets" class="markets-loop"></div>
+  </section>
+
+  <section class="band how" aria-label="How it works">
+    <div class="band-head">
+      <p class="kicker">How it works</p>
+      <h2 class="band-title">From sign-up to first fill.</h2>
+    </div>
+    <div id="rb-how"></div>
+  </section>
+
+  <section class="band features" id="features" aria-label="Features">
+    <div class="dots-bg" id="rb-dots" aria-hidden="true"></div>
+    <div class="band-head">
+      <p class="kicker">Under the hood</p>
+      <h2 class="band-title">Built like a real exchange desk.</h2>
+    </div>
+    <div id="rb-bento" class="bento-wrap"></div>
+  </section>
+
+  <section class="band split risk-band" aria-label="How much can one trade cost you?">
+    <div class="split-copy">
+      <p class="kicker">Try it</p>
+      <h2 class="band-title">How much can one trade cost you?</h2>
+      <p class="band-body">Pick how much of a ₹1,00,000 practice wallet you would risk on each trade. Small risk survives long losing streaks. The maths is shown as it is.</p>
+    </div>
+    <div id="rb-risk" class="split-widget"></div>
+  </section>
+
+  <section class="band split app-band" aria-label="Preview">
+    <div class="split-copy">
+      <p class="kicker">The app</p>
+      <h2 class="band-title">Your desk, in four screens.</h2>
+      <p class="band-body">Wallet, order ticket, live order status and holdings. The figures on these cards are examples; the app shows your own.</p>
+      <a class="text-link" href="app.html">Open the trading desk →</a>
+    </div>
+    <div id="rb-cards" class="split-widget cards-widget"></div>
+  </section>
+
+
+  <section class="band faq" id="faq" aria-label="Questions">
+    <div class="band-head">
+      <p class="kicker">Questions</p>
+      <h2 class="band-title">Straight answers.</h2>
+    </div>
+    <div class="faq-list">
+      <details><summary>Is any real money involved?</summary><p>No. Your wallet holds virtual rupees only. You cannot deposit or withdraw real money, and nothing you do here places a real trade.</p></details>
+      <details><summary>Where do the prices come from?</summary><p>From Yahoo Finance. Quotes are cached for up to 5 seconds and can be delayed, so treat them as close to live, not exchange-grade.</p></details>
+      <details><summary>Which order types can I place?</summary><p>Market orders, buy or sell, in whole shares. Limit and stop orders are not built yet.</p></details>
+      <details><summary>Why does my order say PENDING?</summary><p>Orders wait in a queue until a worker picks them up. If the worker pool is not running, the order stays pending until it starts.</p></details>
+    </div>
+  </section>
+
+  <section class="band final" aria-label="Get started">
+    <h2 class="final-title">Your practice desk is waiting.</h2>
+    <p class="band-body">Virtual rupees, live NSE prices, and an engine you can read.</p>
+    <div id="rb-final"><a class="cta-button" href="app.html">Start trading →</a></div>
+  </section>
+
+  <footer class="site-foot">
+    <div id="rb-wordmark" class="wordmark-wrap"><span class="wordmark">OctaTrade</span></div>
+    <div class="foot-row">
+      <span>OctaTrade is a paper-trading simulator for learning. Virtual money only. Not investment advice. Prices from Yahoo Finance may be delayed.</span>
+      <nav aria-label="Footer"><a href="app.html">Start trading</a><a href="#top" data-scroll-to="0">Back to top</a></nav>
+    </div>
+  </footer>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/lenis@1.1.13/dist/lenis.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/ScrollTrigger.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/SplitText.min.js"></script>
+<!-- optional: <script src="js/scene.js"></script>  procedural fallback film -->
+<script src="js/islands-landing.js"></script>
+<script src="js/app.js"></script>
+<div id="rb-spark" aria-hidden="true"></div>
+</body>
+</html>
