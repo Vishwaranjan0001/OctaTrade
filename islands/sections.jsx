@@ -158,9 +158,9 @@ const ChartVisual = () => (
 );
 const ReviewVisual = () => (
   <div className="practice-visual">
-    <div className="practice-row"><b>Performance</b><span>Nifty 50 comparison</span></div>
-    <div className="practice-row"><b>Allocation</b><span>Position concentration</span></div>
-    <div className="practice-row"><b>Cash buffer</b><span>Room for your next trade</span></div>
+    <div className="practice-row"><b>Portfolio mix</b><span>Weight of each holding</span></div>
+    <div className="practice-row"><b>Concentration</b><span>Your largest positions</span></div>
+    <div className="practice-row"><b>Available funds</b><span>Cash for your next trade</span></div>
   </div>
 );
 export function Features() {
@@ -168,7 +168,7 @@ export function Features() {
     { title: 'Know where you stand.', description: 'See your holdings, invested value and unrealised profit or loss together.', visual: <PortfolioVisual />, colSpan: 2, rowSpan: 2 },
     { title: 'A watchlist of your own.', description: 'Keep the stocks you follow within reach.', visual: <WatchlistVisual /> },
     { title: 'Put price in context.', description: 'Explore four chart ranges, from one day to one year.', visual: <ChartVisual /> },
-    { title: 'Make time to review.', description: 'Look beyond a single trade with portfolio analytics and a Nifty 50 comparison.', visual: <ReviewVisual />, colSpan: 2 },
+    { title: 'Understand your exposure.', description: 'Review your allocation, largest positions and available cash.', visual: <ReviewVisual />, colSpan: 2 },
   ];
   return (
     <MagicBento
