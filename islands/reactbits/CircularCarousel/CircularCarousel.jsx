@@ -984,4 +984,3 @@ const CircularCarousel = forwardRef(({
 });
 
 export default CircularCarousel;
-
