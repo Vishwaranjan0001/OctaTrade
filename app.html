@@ -12,6 +12,8 @@
 <script>try { var t = localStorage.getItem("octa.film.theme"); if (t) document.documentElement.dataset.theme = t; } catch (e) {}</script>
 <link rel="stylesheet" href="css/islands-home.css" />
 <link rel="stylesheet" href="css/desk.css" />
+<link rel="stylesheet" href="css/brand.css" />
+<script src="js/brand.js" defer></script>
 </head>
 <body>
 
@@ -23,8 +25,11 @@
 <main class="auth" id="auth" hidden>
   <div class="auth-dots" data-rb="dots" aria-hidden="true"></div>
   <a class="logo auth-logo" href="index.html">
-    <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.3 3h7.4L21 8.3v7.4L15.7 21H8.3L3 15.7V8.3z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
-    OctaTrade
+    <svg class="brand-mark" width="36" height="36" viewBox="0 0 40 40" fill="none" aria-hidden="true">
+        <path class="brand-frame" d="M14 3.5h12L36.5 14v12L26 36.5H14L3.5 26V14Z" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/>
+        <path class="brand-trend" d="m11 26 7-8 5 4 7-10m-6 0h6v6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span class="brand-word">Octa<span class="brand-trade">Trade</span></span>
   </a>
   <section class="auth-card">
     <p class="kicker">Your practice desk</p>
@@ -52,8 +57,11 @@
 <div class="shell" id="shell" hidden>
   <aside class="sidebar" id="sidebar">
     <a class="logo" href="index.html">
-      <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.3 3h7.4L21 8.3v7.4L15.7 21H8.3L3 15.7V8.3z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
-      OctaTrade
+      <svg class="brand-mark" width="36" height="36" viewBox="0 0 40 40" fill="none" aria-hidden="true">
+        <path class="brand-frame" d="M14 3.5h12L36.5 14v12L26 36.5H14L3.5 26V14Z" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/>
+        <path class="brand-trend" d="m11 26 7-8 5 4 7-10m-6 0h6v6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span class="brand-word">Octa<span class="brand-trade">Trade</span></span>
     </a>
     <span class="paper-chip">Paper account · virtual ₹</span>
     <nav class="side-nav" aria-label="Main">
