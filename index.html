@@ -88,8 +88,11 @@
 <div id="dark-overlay"></div>
 
 <!-- 6. Marquee: lives in a band under the stats, never over section copy -->
-<div class="marquee-wrap" data-enter="46" data-leave="58">
-  <div class="marquee-text">Trade without fear · OctaTrade · Trade without fear · OctaTrade · Trade without fear ·</div>
+<div class="marquee-wrap" data-enter="46" data-leave="58" aria-hidden="true">
+  <div class="marquee-text">
+    <div class="marquee-group"><span>Practise. Review. Repeat.</span><span>·</span><span>OctaTrade</span><span>·</span></div>
+    <div class="marquee-group"><span>Practise. Review. Repeat.</span><span>·</span><span>OctaTrade</span><span>·</span></div>
+  </div>
 </div>
 
 <!-- 7. Scroll container: four-act film, FRAME_SPEED 1.12
@@ -204,7 +207,7 @@
   <section class="band features" id="features" aria-label="Features">
     <div class="band-head">
       <h2 class="band-title">Explore your trading desk.</h2>
-      <p class="band-body">Research NSE stocks, practise trades with virtual funds and review your portfolio. Get to know the tools inside OctaTrade.</p>
+      <p class="band-body">From finding a stock to reviewing your results, explore six connected views built for paper trading.</p>
     </div>
     <div id="rb-feature-tour" class="feature-tour-mount"></div>
   </section>
