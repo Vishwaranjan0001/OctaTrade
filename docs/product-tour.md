@@ -1,13 +1,20 @@
-# Homepage product tour
+# Homepage features
 
-The homepage feature section uses the React Bits `CircularCarousel` in `islands/FeatureTour.jsx`. Six screens introduce market watch, stock research, paper trading, portfolio, analytics, and trade history. Descriptions follow the screen at the front of the cylinder, with links to the corresponding app routes.
+The section mounted at `#rb-feature-tour` uses `islands/FeatureTour.jsx` to present OctaTrade's paper-trading features. The screenshot carousel has been replaced by a feature composition with four distinct areas:
 
-The component source and CSS were supplied by the user and live in `islands/reactbits/CircularCarousel/`, under the existing React Bits license. Integration adds a controller ref for Previous/Next and direct screen selection, keyboard-focus pausing, immediate manual selection for reduced motion, and a fix that stops rendering while the cylinder is at rest. The original drag, momentum, curved tiles, viewport pausing, and visibility handling are preserved.
+- Virtual practice capital: the actual ₹1,00,000 account starting balance, an OctaTrade illustration, and a registration link.
+- Watchlists: an interactive six-stock preview. Selections are local React state, not changes to a visitor's account. The separate link opens the real Watchlist route.
+- Chart timeframes: accessible 1D, 1W, 1M, and 1Y tabs explaining the chart ranges the app supports. They describe capabilities without presenting invented market data.
+- Review tools: links to Portfolio, Analytics, and Orders with concise explanations of their purpose.
 
-Automatic rotation advances one screen at a time and has a visible Play/Pause control. Dragging, keyboard navigation, or choosing a screen pauses autoplay. Left/Right, Home, and End work on the carousel; all controls are keyboard accessible. Reduced motion disables automatic rotation and entrance movement, while keeping manual controls available. The carousel has a descriptive accessible name and each slide is labelled. Screen-reader announcements are quiet during automatic rotation.
+## Interaction and accessibility
 
-## Screenshot provenance
+Watchlist buttons expose their state with `aria-pressed` and announce the selected count, including empty and single-stock states. The timeframe tabs support Left/Right arrows, Home, and End, with linked tab-panel labels. All controls are keyboard accessible and retain visible focus. Motion uses the existing Motion dependency and respects reduced-motion preferences. Layout uses natural content heights rather than fixed card rows or clamped descriptions.
 
-The JPEGs in `images/tour/` were captured on 18 October 2026 from the locally running OctaTrade app using a disposable paper-trading test account. The carousel uses the six desktop captures from a 1440px viewport. Mobile captures from the previous tour are retained. Captures are cropped to the active app view, excluding profile and account controls. They show actual app screens and demo-account activity, without invented account balances or price histories. The public caption explains that balances and trades are examples and market data may be delayed.
+## Illustration provenance
 
-To update a screen, capture the relevant view in the light theme, preserving the filenames: `markets`, `research`, `trading`, `portfolio`, `analytics`, or `history`, followed by `-desktop.jpg`. Keep account credentials and tokens out of images and source. Rebuild the landing bundle with `npm run build --prefix islands` after component changes.
+`images/feature-practice-capital.webp` is an AI-generated illustration created with the built-in image-generation tool on 18 October 2026. It depicts an emerald octagonal vault with ivory paper tokens as a visual metaphor for virtual practice funds. It is not a photograph of a physical OctaTrade product or real currency. The original generated PNG is preserved in the tool's generated-images directory; the website uses a 93 KB WebP conversion. The image has descriptive alternative text and loads lazily.
+
+The previous tour screenshots and supplied CircularCarousel source remain available in the repository but are not imported or rendered by this section.
+
+Rebuild the landing bundle with `npm run build --prefix islands` after component changes.
