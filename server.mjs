@@ -12,6 +12,8 @@ import { fileURLToPath } from "node:url";
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
 const PORT = Number(process.env.PORT || 8787);
 const API = new URL(process.env.API || "http://localhost:3000");
+const PUBLIC_FILES = new Set(["index.html", "app.html"]);
+const PUBLIC_DIRECTORIES = new Set(["css", "js", "frames", "images", "video", "keyframes", "sheets"]);
 
 const TYPES = {
   ".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8",
@@ -42,10 +44,18 @@ function proxy(req, res) {
 }
 
 function serveStatic(req, res) {
-  let rel = decodeURIComponent(new URL(req.url, "http://x").pathname);
+  let rel;
+  try {
+    rel = decodeURIComponent(new URL(req.url, "http://x").pathname);
+  } catch {
+    res.writeHead(400); return res.end("Invalid URL");
+  }
   if (rel.endsWith("/")) rel += "index.html";
-  const file = path.normalize(path.join(ROOT, rel));
-  if (!file.startsWith(ROOT) || file.includes(path.sep + ".claude")) {
+  const file = path.resolve(ROOT, "." + rel);
+  const relative = path.relative(ROOT, file);
+  const parts = relative.split(path.sep);
+  if (path.isAbsolute(relative) || parts.some((part) => part.startsWith(".")) ||
+      !(PUBLIC_FILES.has(relative) || PUBLIC_DIRECTORIES.has(parts[0]))) {
     res.writeHead(403); return res.end();
   }
   fs.stat(file, (err, st) => {
@@ -58,6 +68,10 @@ function serveStatic(req, res) {
 }
 
 const server = http.createServer((req, res) => {
+  if (req.url === "/_health" && (req.method === "GET" || req.method === "HEAD")) {
+    res.writeHead(200, { "content-type": "application/json" });
+    return res.end(req.method === "HEAD" ? undefined : JSON.stringify({ status: "ok" }));
+  }
   if (isProxied(req.url)) return proxy(req, res);
   if (req.method !== "GET" && req.method !== "HEAD") { res.writeHead(405); return res.end(); }
   serveStatic(req, res);

@@ -8,6 +8,7 @@ islands/out/
 !.env.example
 !.env.sample
 qa/test-account.json
+server/runtime/
 
 # Local tool state and operating-system files
 .claude/
