@@ -85,7 +85,7 @@ const STEPS = [
   { k: '01', t: 'Make room to practise.', d: 'Create a free account and start with ₹1,00,000 in virtual funds. Your real money stays out of it.', tag: 'Your account' },
   { k: '02', t: 'Find your focus.', d: 'Explore NSE stocks, study price charts and save the names you want to follow to your watchlist.', tag: 'Your watchlist' },
   { k: '03', t: 'Put an idea to work.', d: 'Choose a stock and a quantity, then practise buying or selling with a simulated market trade.', tag: 'Your first trade' },
-  { k: '04', t: 'Review. Then refine.', d: 'Follow your holdings, review profit or loss and compare performance with the Nifty 50 before your next decision.', tag: 'Your progress' },
+  { k: '04', t: 'Review your results.', d: 'Track profit and loss, compare your holdings with the Nifty 50 and review past trades. Use what you learn to refine your approach.', tag: 'Your progress' },
 ];
 export function HowItWorks() {
   return (
