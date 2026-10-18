@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import ScrollReveal from './reactbits/ScrollReveal/ScrollReveal.jsx';
 import LogoLoop from './reactbits/LogoLoop/LogoLoop.jsx';
 import ScrollStack, { ScrollStackItem } from './reactbits/ScrollStack/ScrollStack.jsx';
-import FeatureTour from './FeatureTour.jsx';
+import FactCards from './FactCards.jsx';
 import CardSwap, { Card } from './reactbits/CardSwap/CardSwap.jsx';
 import ElasticSlider from './reactbits/ElasticSlider/ElasticSlider.jsx';
 import Counter from './reactbits/Counter/Counter.jsx';
@@ -130,7 +130,7 @@ function StepArt({ i }) {
 
 /* ---------- Features: interactive product tour ---------- */
 export function Features() {
-  return <FeatureTour />;
+  return <FactCards />;
 }
 /* ---------- Risk calculator: ElasticSlider + Counter ---------- */
 export function RiskCalc() {

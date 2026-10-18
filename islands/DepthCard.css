@@ -1,0 +1,50 @@
+/* DepthCard: perspective wrapper, tilting body, depth layers ([data-depth]) and glare. */
+.depth-card {
+  --rx: 0deg;
+  --ry: 0deg;
+  --gx: 50%;
+  --gy: 50%;
+  --glare: 0;
+  --lift: 0;
+  --tilt-x: 0;
+  --tilt-y: 0;
+  perspective: 900px;
+  display: block;
+  min-width: 0;
+}
+
+.depth-card__body {
+  position: relative;
+  height: 100%;
+  transform-style: preserve-3d;
+  transform: rotateX(var(--rx)) rotateY(var(--ry)) translateZ(calc(var(--lift) * 8px));
+  will-change: transform;
+  /* the shadow slides opposite to the tilt, so the card reads as lifted off the page */
+  box-shadow:
+    calc(var(--tilt-x) * -1.4px) calc(var(--tilt-y) * 1.4px + 18px * var(--lift) + 6px) calc(24px + 28px * var(--lift)) -12px rgba(18, 26, 22, calc(0.18 + 0.2 * var(--lift)));
+}
+
+.depth-card__body > [data-depth] {
+  transform: translateZ(calc(var(--depth, 0) * 1px));
+}
+.depth-card__body > [data-depth='10'] { --depth: 10; }
+.depth-card__body > [data-depth='20'] { --depth: 20; }
+.depth-card__body > [data-depth='30'] { --depth: 30; }
+.depth-card__body > [data-depth='45'] { --depth: 45; }
+.depth-card__body > [data-depth='60'] { --depth: 60; }
+
+.depth-card__glare {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: var(--glare);
+  background: radial-gradient(circle at var(--gx) var(--gy), rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0) 55%);
+  mix-blend-mode: soft-light;
+  transform: translateZ(1px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .depth-card__body { transform: none; will-change: auto; }
+  .depth-card__glare { display: none; }
+}
