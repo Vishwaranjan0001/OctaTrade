@@ -16,6 +16,6 @@ for (let attempt = 0; attempt < 60; attempt++) {
     print('MongoDB replica set rs0 is ready.');
     quit(0);
   }
-  await sleep(1000);
+  sleep(1000);
 }
 throw new Error('MongoDB did not elect a primary within 60 seconds.');
