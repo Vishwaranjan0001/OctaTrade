@@ -1,0 +1,24 @@
+# Render Blueprint: one free web service that builds the React site and runs
+# the API + worker pool (server/start.js). MongoDB is Atlas, Redis is Redis Cloud.
+services:
+  - type: web
+    name: octatrade
+    runtime: node
+    plan: free
+    branch: feat/client-app
+    buildCommand: cd client && npm ci --include=dev && npm run build && cd ../server && npm ci
+    startCommand: cd server && npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: MONGODB_URI
+        sync: false
+      - key: REDIS_URL
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRES_IN
+        value: 1d
+      - key: WORKER_COUNT
+        value: "2"
