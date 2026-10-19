@@ -8,7 +8,8 @@ import app from "./app.js";
 await connectDatabase();
 await connectRedis();
 
-const PORT = 3000;
+// Render chooses the port and passes it in PORT; on the laptop it stays 3000.
+const PORT = process.env.PORT || 3000;
 
 const server = http.createServer(app);
 
