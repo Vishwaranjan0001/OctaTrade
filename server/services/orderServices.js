@@ -4,11 +4,11 @@ import { Wallet } from "../models/Wallet.js";
 import { WalletTransaction } from "../models/WalletTransaction.js";
 import { Holding } from "../models/Holding.js";
 import { getMarketQuote } from "./marketDataServices.js";
-import { enqueueOrder, getSchedulingPolicy } from "../scheduler/scheduler.js";
+import { enqueueOrder, chooseSchedule } from "../scheduler/scheduler.js";
 
 export async function submitOrder(
   userId,
-  { symbol, side, quantity, priority, idempotencyKey }
+  { symbol, side, quantity, idempotencyKey }
 ) {
   if (idempotencyKey) {
     const existingOrder = await Order.findOne({
@@ -24,7 +24,16 @@ export async function submitOrder(
     }
   }
 
-  const schedulingPolicy = await getSchedulingPolicy();
+  const ordersWaiting = await Order.countDocuments({
+    userId: userId,
+    status: "PENDING"
+  });
+
+  const { schedulingPolicy, priority } = chooseSchedule({
+    side: side,
+    quantity: quantity,
+    ordersWaiting: ordersWaiting
+  });
 
   let order;
 
