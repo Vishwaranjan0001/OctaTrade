@@ -12,12 +12,6 @@ export async function placeOrder(req, res) {
     const quantity = req.body.quantity;
     const idempotencyKey = req.get("Idempotency-Key");
 
-    let priority = 2;
-
-    if (req.body.priority !== undefined) {
-      priority = req.body.priority;
-    }
-
     if (typeof symbol !== "string" || symbol.trim().length === 0) {
       return res.status(400).json({
         message: "symbol is required"
@@ -52,12 +46,6 @@ export async function placeOrder(req, res) {
       });
     }
 
-    if (![1, 2, 3].includes(priority)) {
-      return res.status(400).json({
-        message: "priority must be 1 (high), 2 (normal) or 3 (low)"
-      });
-    }
-
     if (idempotencyKey !== undefined && idempotencyKey.length > 100) {
       return res.status(400).json({
         message: "Idempotency-Key must not exceed 100 characters"
@@ -68,7 +56,6 @@ export async function placeOrder(req, res) {
       symbol: normalizedSymbol,
       side: normalizedSide,
       quantity: quantity,
-      priority: priority,
       idempotencyKey: idempotencyKey
     });
 

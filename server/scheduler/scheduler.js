@@ -1,15 +1,23 @@
 import { redisClient } from "../config/redis.js";
 
-export const POLICIES = ["FCFS", "PRIORITY", "ROUND_ROBIN"];
-
-const POLICY_KEY = "scheduler:policy";
-
 // FCFS and PRIORITY: one sorted set. The order with the SMALLEST score runs first.
 const ORDER_QUEUE_KEY = "queue:orders";
 
-// PRIORITY: every level below 1 counts as arriving 5 seconds later.
+// PRIORITY: each level away from normal (2) moves the order 5 seconds.
+// Priority 1 counts as arriving 5 s earlier, priority 3 as 5 s later.
 // So a low-priority order is not stuck forever: after waiting long enough it wins (aging).
 const PRIORITY_STEP_MS = 5000;
+const NORMAL_PRIORITY = 2;
+
+// A user with this many orders already waiting is flooding the queue.
+const FLOOD_LIMIT = 3;
+
+// A BUY above this many shares is a big order.
+const LARGE_QUANTITY = 100;
+
+// Workers serve the round-robin line on 1 pick out of every 3.
+const ROUND_ROBIN_EVERY = 3;
+const TURN_KEY = "scheduler:turn";
 
 // ROUND_ROBIN: a line of users, and one list of orders per user.
 // Each turn, the first user in line runs ONE order and goes to the back of the line.
@@ -35,18 +43,25 @@ function userQueueKey(userId) {
   return `queue:rr:user:${userId}`;
 }
 
-export async function getSchedulingPolicy() {
-  const policy = await redisClient.sendCommand(["GET", POLICY_KEY]);
-
-  if (POLICIES.includes(policy)) {
-    return policy;
+// The server picks the algorithm and priority for each order. Users cannot choose.
+export function chooseSchedule({ side, quantity, ordersWaiting }) {
+  // Many orders from one user: share turns fairly so they don't block everyone else.
+  if (ordersWaiting >= FLOOD_LIMIT) {
+    return { schedulingPolicy: "ROUND_ROBIN", priority: 3 };
   }
 
-  return "FCFS";
-}
+  // Selling locks in the price and frees cash, so it goes ahead.
+  if (side === "SELL") {
+    return { schedulingPolicy: "PRIORITY", priority: 1 };
+  }
 
-export async function setSchedulingPolicy(policy) {
-  await redisClient.sendCommand(["SET", POLICY_KEY, policy]);
+  // Big BUY: let small orders finish first (shortest job first).
+  if (quantity > LARGE_QUANTITY) {
+    return { schedulingPolicy: "PRIORITY", priority: 3 };
+  }
+
+  // Normal BUY: first come, first served.
+  return { schedulingPolicy: "FCFS", priority: NORMAL_PRIORITY };
 }
 
 export async function enqueueOrder(order) {
@@ -69,7 +84,7 @@ export async function enqueueOrder(order) {
   let score = order.createdAt.getTime();
 
   if (order.schedulingPolicy === "PRIORITY") {
-    score = score + (order.priority - 1) * PRIORITY_STEP_MS;
+    score = score + (order.priority - NORMAL_PRIORITY) * PRIORITY_STEP_MS;
   }
 
   await redisClient.sendCommand([
@@ -96,16 +111,17 @@ async function takeRoundRobinOrder() {
 }
 
 export async function takeNextOrder() {
-  const policy = await getSchedulingPolicy();
+  // Shared counter, so all workers take turns together.
+  const turn = await redisClient.sendCommand(["INCR", TURN_KEY]);
 
-  if (policy === "ROUND_ROBIN") {
+  // Round-robin's turn: serve the flooding users' line first.
+  if (turn % ROUND_ROBIN_EVERY === 0) {
     const orderId = await takeRoundRobinOrder();
 
     if (orderId) {
       return orderId;
     }
 
-    // Orders queued before the policy was changed
     return takeSortedOrder();
   }
 
@@ -115,6 +131,6 @@ export async function takeNextOrder() {
     return orderId;
   }
 
-  // Orders queued before the policy was changed
+  // Sorted queue is empty, so don't leave the round-robin line waiting.
   return takeRoundRobinOrder();
 }
