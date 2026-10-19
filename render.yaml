@@ -1,0 +1,36 @@
+# Render Blueprint for the main-branch OctaTrade (the same app Docker Compose runs).
+# One free web service runs the website, the API and the workers (render-start.mjs).
+# MongoDB is Atlas (MONGODB_URI is pasted in the dashboard); Redis is a free Key Value instance.
+services:
+  - type: web
+    name: octatrade
+    runtime: node
+    plan: free
+    branch: deploy/render-main
+    buildCommand: cd islands && npm ci && npm run build && cd ../server && npm ci --omit=dev
+    startCommand: node render-start.mjs
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: MONGODB_URI
+        sync: false
+      - key: REDIS_URL
+        fromService:
+          type: keyvalue
+          name: octatrade-kv
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRES_IN
+        value: 7d
+      - key: WORKER_COUNT
+        value: "2"
+
+  - type: keyvalue
+    name: octatrade-kv
+    plan: free
+    # Reachable only from services in this Render account, not from the internet.
+    ipAllowList: []
+    # The order queue must never be evicted to free memory.
+    maxmemoryPolicy: noeviction
