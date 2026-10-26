@@ -1,6 +1,32 @@
-# OctaTrade final frontend
+# OctaTrade — Paper Trading Simulator
 
-The Papermint scroll-film landing page with OctaTrade content, plus a trading desk and the OctaTrade backend, order workers, MongoDB, and Redis.
+A full-stack stock trading simulator with virtual wallets, live market quotes, portfolio valuation, and real-time order updates.
+
+**Built by [Vishwaranjan Singh](https://github.com/Vishwaranjan0001)** · [Portfolio](https://vishwaranjan0001.github.io/)
+
+![OctaTrade trading desk](images/tour/trading-desktop.jpg)
+
+## Engineering highlights
+
+- **Concurrent order processing:** separate API and worker processes, worker pools, and Redis-backed scheduling.
+- **Consistency:** per-user distributed locks and MongoDB transactions coordinate wallet and holding updates.
+- **Realtime experience:** Socket.IO order events, market quotes, portfolio analytics, and virtual wallet activity.
+- **Authentication:** JWT-protected API routes.
+- **Local reproducibility:** Docker Compose packages the frontend, API, workers, MongoDB replica set, and Redis.
+
+**Stack:** JavaScript, Node.js, Express, MongoDB, Redis, Socket.IO, React components, Docker.
+
+### Explore the implementation
+
+| Area | Source |
+| --- | --- |
+| Order execution | [Order service](server/services/orderServices.js), [worker pool](server/workerPool.js) |
+| Concurrency | [Per-user lock](server/concurrency/userLock.js) |
+| Scheduling | [Scheduler](server/scheduler/scheduler.js) |
+| Architecture decisions | [Design notes](docs/architecture-decisions.md) |
+| Screens and workflows | [Product tour](docs/product-tour.md) |
+
+This is a paper-trading project using virtual funds. Market quotes may be delayed; it does not execute brokerage trades.
 
 ## Start on another device with Docker
 
