@@ -8,6 +8,7 @@ import { takeNextOrder, enqueueOrder } from "./scheduler/scheduler.js";
 import { acquireLock, releaseLock } from "./concurrency/userLock.js";
 import { executeBuyOrder, executeSellOrder } from "./services/orderServices.js";
 import { publishOrderUpdate } from "./realtime/socket.js";
+import { createOrderNotification } from "./services/notificationServices.js";
 
 const IDLE_SLEEP_MS = 200;
 const LOCK_WAIT_MS = 30000;
@@ -59,21 +60,28 @@ async function processOrder(orderId) {
       console.error(`Worker ${process.pid}: order ${orderId} failed:`, error.message);
     }
 
-    const finishedOrder = await Order.findByIdAndUpdate(
-      orderId,
-      {
-        finishedAt: new Date()
-      },
-      {
-        returnDocument: "after"
-      }
-    );
+    let finishedOrder = await Order.findById(orderId);
 
-    const waitingMs = finishedOrder.startedAt - finishedOrder.createdAt;
+    // A LIMIT or STOP_LOSS order whose price is not reached yet is OPEN, not finished.
+    if (finishedOrder.status === "COMPLETED" || finishedOrder.status === "REJECTED") {
+      finishedOrder = await Order.findByIdAndUpdate(
+        orderId,
+        {
+          finishedAt: new Date()
+        },
+        {
+          returnDocument: "after"
+        }
+      );
 
-    console.log(
-      `Worker ${process.pid}: ${finishedOrder.side} ${finishedOrder.quantity} ${finishedOrder.symbol} -> ${finishedOrder.status} (waited ${waitingMs} ms)`
-    );
+      const waitingMs = finishedOrder.startedAt - finishedOrder.createdAt;
+
+      console.log(
+        `Worker ${process.pid}: ${finishedOrder.side} ${finishedOrder.quantity} ${finishedOrder.symbol} -> ${finishedOrder.status} (waited ${waitingMs} ms)`
+      );
+
+      await createOrderNotification(finishedOrder);
+    }
 
     await publishOrderUpdate(finishedOrder);
   } finally {

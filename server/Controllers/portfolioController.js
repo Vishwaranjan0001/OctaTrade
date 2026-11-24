@@ -1,6 +1,7 @@
 import {
   getPortfolioByUserId,
-  getPortfolioHistory
+  getPortfolioHistory,
+  getTradePerformance
 } from "../services/portfolioServices.js";
 
 export async function getMyPortfolio(req, res) {
@@ -33,6 +34,22 @@ export async function getMyPortfolioHistory(req, res) {
 
     return res.status(502).json({
       message: "Unable to retrieve portfolio history"
+    });
+  }
+}
+
+export async function getMyTradePerformance(req, res) {
+  try {
+    const performance = await getTradePerformance(req.userId);
+
+    return res.status(200).json({
+      performance: performance
+    });
+  } catch (error) {
+    console.error(error.message);
+
+    return res.status(500).json({
+      message: "Unable to calculate trade performance"
     });
   }
 }

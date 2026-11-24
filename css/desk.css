@@ -84,9 +84,9 @@ code { font-family: var(--font-mono); font-size: 0.92em; }
 .btn-sell { background: var(--accent-2); border-color: var(--accent-2); color: #fff; }
 .field { display: grid; gap: 6px; margin-bottom: 14px; }
 .field > span { font-size: 14px; font-weight: 600; color: var(--ink-soft); }
-.field input, .inline-form input, .filters input, .watch-form input, .mini-search, .search input {
-  min-height: 46px; padding: 0 14px; border-radius: 12px; border: 1px solid var(--line-strong); background: var(--field); font-size: 16px; width: 100%; }
-.field input:focus, .inline-form input:focus, .filters input:focus, .watch-form input:focus, .mini-search:focus, .search input:focus {
+.field input, .field select, .inline-form input, .filters input, .watch-form input, .mini-search, .search input {
+  min-height: 46px; padding: 0 14px; border-radius: 12px; border: 1px solid var(--line-strong); background: var(--field); font-size: 16px; width: 100%; color: inherit; }
+.field input:focus, .field select:focus, .inline-form input:focus, .filters input:focus, .watch-form input:focus, .mini-search:focus, .search input:focus {
   outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
 .field input[aria-invalid="true"] { border-color: var(--accent-2); }
 .hint { font-size: 13.5px; color: var(--ink-faint); }
@@ -205,8 +205,8 @@ code { font-family: var(--font-mono); font-size: 0.92em; }
 .status { font-family: var(--font-mono); font-size: 12.5px; padding: 4px 8px; border-radius: 999px; background: var(--line); white-space: nowrap; }
 .status.COMPLETED { background: var(--accent-soft); color: var(--accent-ink); }
 .status.REJECTED, .status.CANCELLED { background: var(--accent-2-soft); color: var(--accent-2-ink); }
-.status.PROCESSING, .status.PENDING { background: rgba(242, 193, 78, 0.25); color: #7a5a08; }
-:root[data-theme="dark"] .status.PROCESSING, :root[data-theme="dark"] .status.PENDING, :root[data-theme="dark"] .pill-warn { color: #f2c14e; }
+.status.PROCESSING, .status.PENDING, .status.OPEN { background: rgba(242, 193, 78, 0.25); color: #7a5a08; }
+:root[data-theme="dark"] .status.PROCESSING, :root[data-theme="dark"] .status.PENDING, :root[data-theme="dark"] .status.OPEN, :root[data-theme="dark"] .pill-warn { color: #f2c14e; }
 tr.flash, li.flash { animation: flash 1.2s ease; }
 @keyframes flash { from { background: var(--accent-soft); } to { background: transparent; } }
 

@@ -4,11 +4,143 @@ import { Wallet } from "../models/Wallet.js";
 import { WalletTransaction } from "../models/WalletTransaction.js";
 import { Holding } from "../models/Holding.js";
 import { getMarketQuote } from "./marketDataServices.js";
-import { enqueueOrder, chooseSchedule } from "../scheduler/scheduler.js";
+import { enqueueOrder, chooseSchedule, removeQueuedOrder } from "../scheduler/scheduler.js";
+
+// Runs work(session) as one MongoDB transaction: everything is saved, or nothing is.
+async function inTransaction(work) {
+  const session = await mongoose.startSession();
+
+  try {
+    await session.withTransaction(() => work(session));
+  } finally {
+    await session.endSession();
+  }
+}
+
+// Moves money between the available and reserved balances and writes a ledger row.
+//   amountPaise > 0: RESERVE (available -> reserved)
+//   amountPaise < 0: RELEASE (reserved -> available)
+// Returns false if there is not enough money to move.
+async function moveReservedMoney(userId, amountPaise, session) {
+  let filter;
+
+  if (amountPaise > 0) {
+    filter = { userId: userId, availableBalancePaise: { $gte: amountPaise } };
+  } else {
+    filter = { userId: userId, reservedBalancePaise: { $gte: -amountPaise } };
+  }
+
+  const wallet = await Wallet.findOneAndUpdate(
+    filter,
+    {
+      $inc: {
+        availableBalancePaise: -amountPaise,
+        reservedBalancePaise: amountPaise
+      }
+    },
+    {
+      returnDocument: "after",
+      session: session
+    }
+  );
+
+  if (!wallet) {
+    return false;
+  }
+
+  let type = "RELEASE";
+
+  if (amountPaise > 0) {
+    type = "RESERVE";
+  }
+
+  await WalletTransaction.create(
+    [
+      {
+        userId: userId,
+        walletId: wallet._id,
+        type: type,
+        amountPaise: Math.abs(amountPaise),
+        availableBalanceAfterPaise: wallet.availableBalancePaise,
+        reservedBalanceAfterPaise: wallet.reservedBalancePaise
+      }
+    ],
+    { session: session }
+  );
+
+  return true;
+}
+
+// Has the market reached this order's price? MARKET orders always run.
+export function priceConditionMet(order, pricePaise) {
+  if (order.orderType === "LIMIT" && order.side === "BUY") {
+    return pricePaise <= order.limitPricePaise;
+  }
+
+  if (order.orderType === "LIMIT" && order.side === "SELL") {
+    return pricePaise >= order.limitPricePaise;
+  }
+
+  if (order.orderType === "STOP_LOSS") {
+    return pricePaise <= order.triggerPricePaise;
+  }
+
+  return true;
+}
+
+// Price not reached yet: the order waits as OPEN. The trigger watcher queues it again later.
+async function markOrderOpen(order) {
+  order.status = "OPEN";
+  order.startedAt = null;
+  order.workerId = null;
+  await order.save();
+
+  return {
+    success: false,
+    reason: "WAITING_FOR_PRICE",
+    order: order
+  };
+}
+
+// Cancels a PENDING or OPEN order and gives back any reserved money.
+// Returns null if the order is not this user's, or is no longer PENDING or OPEN.
+export async function cancelOrder(orderId, userId) {
+  let order = null;
+
+  await inTransaction(async (session) => {
+    order = await Order.findOneAndUpdate(
+      {
+        _id: orderId,
+        userId: userId,
+        status: { $in: ["PENDING", "OPEN"] }
+      },
+      {
+        status: "CANCELLED",
+        finishedAt: new Date()
+      },
+      {
+        returnDocument: "after",
+        session: session
+      }
+    );
+
+    if (order && order.reservedAmountPaise > 0) {
+      await moveReservedMoney(userId, -order.reservedAmountPaise, session);
+      order.reservedAmountPaise = 0;
+      await order.save({ session: session });
+    }
+  });
+
+  if (order) {
+    await removeQueuedOrder(order);
+  }
+
+  return order;
+}
 
 export async function submitOrder(
   userId,
-  { symbol, side, quantity, idempotencyKey }
+  { symbol, side, quantity, idempotencyKey, orderType, limitPricePaise, triggerPricePaise }
 ) {
   if (idempotencyKey) {
     const existingOrder = await Order.findOne({
@@ -45,7 +177,10 @@ export async function submitOrder(
       quantity: quantity,
       priority: priority,
       idempotencyKey: idempotencyKey,
-      schedulingPolicy: schedulingPolicy
+      schedulingPolicy: schedulingPolicy,
+      orderType: orderType,
+      limitPricePaise: limitPricePaise,
+      triggerPricePaise: triggerPricePaise
     });
   } catch (error) {
     if (error.code === 11000 && idempotencyKey) {
@@ -63,6 +198,30 @@ export async function submitOrder(
     throw error;
   }
 
+  // LIMIT BUY: hold back limit price x quantity now, so the money is there when the price comes.
+  if (orderType === "LIMIT" && side === "BUY") {
+    const amountPaise = limitPricePaise * quantity;
+    let reserved = false;
+
+    await inTransaction(async (session) => {
+      reserved = await moveReservedMoney(userId, amountPaise, session);
+
+      if (reserved) {
+        order.reservedAmountPaise = amountPaise;
+        await order.save({ session: session });
+      }
+    });
+
+    if (!reserved) {
+      await rejectOrder(order, "INSUFFICIENT_FUNDS");
+
+      return {
+        order: order,
+        isDuplicate: false
+      };
+    }
+  }
+
   await enqueueOrder(order);
 
   return {
@@ -71,10 +230,23 @@ export async function submitOrder(
   };
 }
 
+// Marks the order REJECTED. A LIMIT BUY also gets its reserved money back.
 export async function rejectOrder(order, reason) {
-  order.status = "REJECTED";
-  order.rejectionReason = reason;
-  await order.save();
+  const reservedPaise = order.reservedAmountPaise;
+
+  // Do not reuse the session of an earlier, aborted transaction.
+  order.$session(null);
+
+  await inTransaction(async (session) => {
+    if (reservedPaise > 0) {
+      await moveReservedMoney(order.userId, -reservedPaise, session);
+    }
+
+    order.reservedAmountPaise = 0;
+    order.status = "REJECTED";
+    order.rejectionReason = reason;
+    await order.save({ session: session });
+  });
 
   return order;
 }
@@ -132,6 +304,11 @@ export async function executeBuyOrder(order) {
   try {
     quote = await getMarketQuote(symbol);
   } catch (error) {
+    // A LIMIT order can wait for the next price check instead of failing.
+    if (order.orderType !== "MARKET") {
+      return markOrderOpen(order);
+    }
+
     await rejectOrder(order, "QUOTE_UNAVAILABLE");
 
     return {
@@ -168,6 +345,11 @@ export async function executeBuyOrder(order) {
     };
   }
 
+  // LIMIT BUY above its limit price: wait.
+  if (!priceConditionMet(order, executionPricePaise)) {
+    return markOrderOpen(order);
+  }
+
   const existingWallet = await Wallet.findOne({
     userId: userId
   });
@@ -182,7 +364,8 @@ export async function executeBuyOrder(order) {
     };
   }
 
-  if (existingWallet.availableBalancePaise < totalAmountPaise) {
+  // A LIMIT BUY's reserved money counts too: it is given back just before paying.
+  if (existingWallet.availableBalancePaise + order.reservedAmountPaise < totalAmountPaise) {
     await rejectOrder(order, "INSUFFICIENT_FUNDS");
 
     return {
@@ -196,6 +379,11 @@ export async function executeBuyOrder(order) {
   session.startTransaction();
 
   try {
+    // LIMIT BUY: first give the reserved money back, then pay like a market order.
+    if (order.reservedAmountPaise > 0) {
+      await moveReservedMoney(userId, -order.reservedAmountPaise, session);
+    }
+
     const wallet = await Wallet.findOneAndUpdate(
       {
         _id: existingWallet._id,
@@ -250,6 +438,7 @@ export async function executeBuyOrder(order) {
     order.status = "COMPLETED";
     order.executionPricePaise = executionPricePaise;
     order.totalAmountPaise = totalAmountPaise;
+    order.reservedAmountPaise = 0;
     await order.save({ session: session });
 
     await session.commitTransaction();
@@ -327,13 +516,15 @@ export async function updateHoldingAfterSell(
 
     return {
       success: true,
-      holding: null
+      holding: null,
+      averageBuyPricePaise: holding.averageBuyPricePaise
     };
   }
 
   return {
     success: true,
-    holding: holding
+    holding: holding,
+    averageBuyPricePaise: holding.averageBuyPricePaise
   };
 }
 
@@ -347,6 +538,11 @@ export async function executeSellOrder(order) {
   try {
     quote = await getMarketQuote(symbol);
   } catch (error) {
+    // A LIMIT or STOP_LOSS order can wait for the next price check instead of failing.
+    if (order.orderType !== "MARKET") {
+      return markOrderOpen(order);
+    }
+
     await rejectOrder(order, "QUOTE_UNAVAILABLE");
 
     return {
@@ -382,6 +578,11 @@ export async function executeSellOrder(order) {
       reason: "INVALID_QUOTE",
       order: order
     };
+  }
+
+  // LIMIT SELL below its limit, or STOP_LOSS above its trigger: wait.
+  if (!priceConditionMet(order, executionPricePaise)) {
+    return markOrderOpen(order);
   }
 
   const totalAmountPaise =
@@ -461,6 +662,9 @@ export async function executeSellOrder(order) {
     order.status = "COMPLETED";
     order.executionPricePaise = executionPricePaise;
     order.totalAmountPaise = totalAmountPaise;
+    // Realized profit or loss: what the shares sold for minus what they cost.
+    order.costBasisPaise = holdingResult.averageBuyPricePaise * quantity;
+    order.realizedProfitLossPaise = totalAmountPaise - order.costBasisPaise;
     await order.save({ session: session });
 
     await session.commitTransaction();

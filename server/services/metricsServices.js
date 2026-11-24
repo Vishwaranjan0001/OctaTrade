@@ -7,6 +7,8 @@ export async function getSchedulingMetrics(minutes) {
     {
       $match: {
         createdAt: { $gte: since },
+        // LIMIT and STOP_LOSS orders wait for a price on purpose, which is not scheduler delay.
+        orderType: "MARKET",
         schedulingPolicy: { $ne: null },
         startedAt: { $ne: null },
         finishedAt: { $ne: null }

@@ -2,8 +2,46 @@ import mongoose from "mongoose";
 import {
   submitOrder,
   getOrdersByUserId,
-  getOrderByIdForUser
+  getOrderByIdForUser,
+  cancelOrder
 } from "../services/orderServices.js";
+import { publishOrderUpdate } from "../realtime/socket.js";
+import { createOrderNotification } from "../services/notificationServices.js";
+
+// POST /api/orders/:orderId/cancel
+export async function cancelMyOrder(req, res) {
+  try {
+    const orderId = req.params.orderId;
+
+    if (!mongoose.isValidObjectId(orderId)) {
+      return res.status(400).json({
+        message: "Invalid order ID"
+      });
+    }
+
+    const order = await cancelOrder(orderId, req.userId);
+
+    if (!order) {
+      return res.status(409).json({
+        message: "Only your PENDING or OPEN orders can be cancelled"
+      });
+    }
+
+    await createOrderNotification(order);
+    await publishOrderUpdate(order);
+
+    return res.status(200).json({
+      message: "Order cancelled",
+      order: order
+    });
+  } catch (error) {
+    console.error(error.message);
+
+    return res.status(500).json({
+      message: "Unable to cancel order"
+    });
+  }
+}
 
 export async function placeOrder(req, res) {
   try {
@@ -52,11 +90,43 @@ export async function placeOrder(req, res) {
       });
     }
 
+    // MARKET (default), LIMIT (needs limitPricePaise), STOP_LOSS (SELL only, needs triggerPricePaise)
+    const orderType = req.body.orderType || "MARKET";
+    const limitPricePaise = req.body.limitPricePaise || null;
+    const triggerPricePaise = req.body.triggerPricePaise || null;
+
+    if (!["MARKET", "LIMIT", "STOP_LOSS"].includes(orderType)) {
+      return res.status(400).json({
+        message: "orderType must be MARKET, LIMIT or STOP_LOSS"
+      });
+    }
+
+    if (orderType === "LIMIT" && !(Number.isInteger(limitPricePaise) && limitPricePaise > 0)) {
+      return res.status(400).json({
+        message: "A LIMIT order needs limitPricePaise as a positive integer"
+      });
+    }
+
+    if (orderType === "STOP_LOSS" && normalizedSide !== "SELL") {
+      return res.status(400).json({
+        message: "A STOP_LOSS order must be a SELL"
+      });
+    }
+
+    if (orderType === "STOP_LOSS" && !(Number.isInteger(triggerPricePaise) && triggerPricePaise > 0)) {
+      return res.status(400).json({
+        message: "A STOP_LOSS order needs triggerPricePaise as a positive integer"
+      });
+    }
+
     const result = await submitOrder(req.userId, {
       symbol: normalizedSymbol,
       side: normalizedSide,
       quantity: quantity,
-      idempotencyKey: idempotencyKey
+      idempotencyKey: idempotencyKey,
+      orderType: orderType,
+      limitPricePaise: limitPricePaise,
+      triggerPricePaise: triggerPricePaise
     });
 
     if (result.isDuplicate) {

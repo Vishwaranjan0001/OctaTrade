@@ -133,8 +133,22 @@
     actKind: "all", actQuery: "", sort: { key: "currentValuePaise", dir: "desc" },
   };
   const userKey = (k) => `octa.film.${k}.${state.user ? state.user.id : "anon"}`;
-  const saveWatch = () => store.set(userKey("watch"), JSON.stringify(state.watch));
-  const saveNotifs = () => store.set(userKey("notifs"), JSON.stringify(state.notifs.slice(0, 100)));
+  // Watchlist and notifications are saved on the server, so they follow the account to any browser.
+  async function loadWatch() {
+    state.watch = (await api("/api/watchlist")).symbols;
+    // First visit after this change: move the list this browser kept (or the starter list) to the server.
+    if (!state.watch.length && !store.get(userKey("watch-moved"))) {
+      for (const s of store.json(userKey("watch"), DEFAULT_WATCH)) {
+        state.watch = (await api(`/api/watchlist/${encodeURIComponent(s)}`, { method: "PUT" })).symbols;
+      }
+    }
+    store.set(userKey("watch-moved"), "1");
+  }
+  const NOTIF_STATUS = { "Order filled": "COMPLETED", "Order rejected": "REJECTED", "Order cancelled": "CANCELLED" };
+  async function loadNotifs() {
+    const { notifications } = await api("/api/notifications");
+    state.notifs = notifications.map((n) => ({ id: n._id, title: n.title, detail: n.message, at: n.createdAt, read: n.read, status: NOTIF_STATUS[n.title] }));
+  }
 
   // ---------- toasts + headline number ----------
   function toast(title, description = "", tag = "ok") {
@@ -231,8 +245,8 @@
     state.tx = transactions.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
   }
   async function loadPHistory() { state.pHistory = (await api("/api/portfolio/history")).history; }
-  async function refresh(parts = ["wallet", "holdings", "orders", "tx", "phist"]) {
-    const map = { wallet: loadWallet, holdings: loadHoldings, orders: loadOrders, tx: loadTx, phist: loadPHistory };
+  async function refresh(parts = ["wallet", "holdings", "orders", "tx", "phist", "notifs"]) {
+    const map = { wallet: loadWallet, holdings: loadHoldings, orders: loadOrders, tx: loadTx, phist: loadPHistory, notifs: loadNotifs };
     await Promise.allSettled(parts.map((p) => map[p]()));
     render();
   }
@@ -372,7 +386,7 @@
     closeNav();
     placeTicket();
     window.scrollTo(0, 0);
-    if (v === "notifications") { state.notifs.forEach((n) => (n.read = true)); saveNotifs(); }
+    if (v === "notifications") { state.notifs.forEach((n) => (n.read = true)); api("/api/notifications/read-all", { method: "POST" }).catch(() => {}); }
     window.dispatchEvent(new CustomEvent("pm:route", { detail: { view: v } }));
     render();
     pollNow();
@@ -520,9 +534,11 @@
     const next = on === undefined ? !has : on;
     if (next && !has) state.watch.push(s);
     if (!next && has) state.watch = state.watch.filter((x) => x !== s);
-    saveWatch();
     render();
     pollWatch();
+    // Save on the server; on failure reload the list the server has.
+    api(`/api/watchlist/${encodeURIComponent(s)}`, { method: next ? "PUT" : "DELETE" })
+      .catch((ex) => { toast("Watchlist not saved", ex.message, "err"); loadWatch().then(render, () => {}); });
   }
 
   // ---------- Trade terminal ----------
@@ -764,14 +780,14 @@
     const list = state.orders.filter((o) => {
       const tab = state.orderTab;
       const okTab = tab === "all" || (tab === "executed" && o.status === "COMPLETED") || (tab === "rejected" && o.status === "REJECTED") ||
-        (tab === "open" && (o.status === "PENDING" || o.status === "PROCESSING"));
+        (tab === "open" && (o.status === "PENDING" || o.status === "PROCESSING" || o.status === "OPEN"));
       return okTab && (state.orderSide === "ALL" || o.side === state.orderSide) && o.symbol.toLowerCase().includes(q);
     });
     $("o-rows").innerHTML = list.length ? list.map((o) => {
       const open = state.openOrder === o._id;
       return `<tr class="click" data-order="${esc(o._id)}" aria-expanded="${open}">
         <td><span class="sec"><span class="sym-badge">${badge(o.symbol)}</span><span><b>${esc(o.symbol)}</b><small>${when(o.createdAt)}</small></span></span></td>
-        <td><span class="side-tag ${o.side}">${o.side}</span></td><td><span class="pill">${o.orderType || "MARKET"}</span></td>
+        <td><span class="side-tag ${o.side}">${o.side}</span></td><td><span class="pill">${o.orderType || "MARKET"}${o.limitPricePaise ? " " + paise(o.limitPricePaise) : ""}${o.triggerPricePaise ? " " + paise(o.triggerPricePaise) : ""}</span></td>
         <td class="r">${o.quantity}</td><td class="r">${o.executionPricePaise ? paise(o.executionPricePaise) : "—"}</td>
         <td class="r">${o.totalAmountPaise ? paise(o.totalAmountPaise) : "—"}</td><td class="r"><span class="status ${o.status}">${o.status}</span></td></tr>
         ${open ? `<tr class="detail"><td colspan="7"><div class="info-grid">
@@ -779,10 +795,24 @@
           <div><span class="muted">Placed</span><b>${when(o.createdAt)}</b></div>
           <div><span class="muted">Finished</span><b>${o.finishedAt ? when(o.finishedAt) : "Not yet"}</b></div>
           <div><span class="muted">${o.status === "REJECTED" ? "Reason" : "Next"}</span><b>${o.status === "REJECTED" ? esc(o.rejectionReason || "Not given") : `<a class="text-link" href="#trade/${encodeURIComponent(o.symbol)}">Trade ${esc(short(o.symbol))} →</a>`}</b></div>
+          ${o.realizedProfitLossPaise != null ? `<div><span class="muted">Realized P/L</span><b class="${tone(o.realizedProfitLossPaise)}">${signed(o.realizedProfitLossPaise)}</b></div>` : ""}
+          ${o.status === "PENDING" || o.status === "OPEN" ? `<div><span class="muted">Not filled yet</span><b><button class="btn btn-ghost" type="button" data-cancel="${esc(o._id)}">Cancel order</button></b></div>` : ""}
         </div></td></tr>` : ""}`;
     }).join("") : `<tr class="empty"><td colspan="7">No matching orders. Change the filters or <a class="text-link" href="#trade">place a paper order</a>.</td></tr>`;
   };
-  $("o-rows").addEventListener("click", (e) => {
+  $("o-rows").addEventListener("click", async (e) => {
+    const cancel = e.target.closest("[data-cancel]");
+    if (cancel) {
+      try {
+        const out = await api(`/api/orders/${cancel.dataset.cancel}/cancel`, { method: "POST" });
+        state.orders = state.orders.map((x) => (x._id === out.order._id ? out.order : x));
+        toast("Order cancelled", `${out.order.side} ${out.order.quantity} ${out.order.symbol}`);
+        refresh(["wallet", "tx", "notifs"]);
+      } catch (ex) {
+        toast("Could not cancel", ex.message, "err");
+      }
+      return;
+    }
     if (e.target.closest("a")) return;
     const tr = e.target.closest("tr[data-order]");
     if (!tr) return;
@@ -858,6 +888,14 @@
     obs.push([cashPct < 10 ? "warn" : "", "Cash buffer", `${cashPct.toFixed(1)}% of your account is cash${cashPct < 10 ? ". Little room for new trades." : "."}`]);
     if (rej) obs.push(["bad", "Rejected orders", `${rej} order${rej === 1 ? " was" : "s were"} rejected. Check the reason in Orders.`]);
     $("a-obs").innerHTML = obs.map(([c, b, s]) => `<li class="${c}"><b>${esc(b)}</b><span>${esc(s)}</span></li>`).join("");
+    // Closed trades: realized profit or loss from completed sells.
+    api("/api/portfolio/performance").then(({ performance: p }) => {
+      $("a-realized").textContent = signed(p.realizedProfitLossPaise);
+      $("a-realized").className = tone(p.realizedProfitLossPaise);
+      $("a-winrate").textContent = p.winRate === null ? "—" : `${p.winRate}%`;
+      $("a-closed").textContent = p.closedTrades;
+      $("a-wl").textContent = `${p.wins} / ${p.losses}`;
+    }, () => {});
   };
 
   // ---------- Activity (AnimatedList) ----------
@@ -940,7 +978,7 @@
       })),
     });
   };
-  $("n-clear").addEventListener("click", () => { state.notifs = []; saveNotifs(); render(); });
+  $("n-clear").addEventListener("click", async () => { await api("/api/notifications", { method: "DELETE" }).catch(() => {}); state.notifs = []; render(); });
 
   // ---------- Profile ----------
   RENDER.profile = () => {
@@ -1001,6 +1039,9 @@
     const p = c ? c.q.price : null;
     $("o-est").textContent = p && Number.isInteger(q) && q > 0 ? inr(p * q) : "—";
     const s = side();
+    if (s === "BUY" && form.orderType.value === "STOP_LOSS") form.orderType.value = "MARKET";   // stop-loss is SELL only
+    $("o-price-field").hidden = form.orderType.value === "MARKET";
+    $("o-price-label").textContent = form.orderType.value === "LIMIT" ? "Limit price (₹)" : "Trigger price (₹)";
     $("order-submit").hidden = s === "SELL";
     form.querySelector('[data-rb="hold"]').hidden = s !== "SELL";
     let max = 0, hint = "";
@@ -1041,6 +1082,9 @@
     if (symbol.length > 20) { form.symbol.setAttribute("aria-invalid", "true"); return (err.textContent = "Symbols are at most 20 characters."); }
     if (!Number.isInteger(quantity) || quantity <= 0) { form.quantity.setAttribute("aria-invalid", "true"); return (err.textContent = "Quantity must be a whole number of shares, 1 or more."); }
     const s = side();
+    const orderType = form.orderType.value;
+    const pricePaise = Math.round(Number(form.price.value) * 100);
+    if (orderType !== "MARKET" && !(pricePaise > 0)) return (err.textContent = "Enter a price above ₹0.");
     if (s === "SELL") {
       const held = state.holdings.find((h) => h.symbol === symbol);
       if (!held || held.quantity < quantity) {
@@ -1050,7 +1094,7 @@
     } else {
       const c = quoteCache.get(symbol);
       if (c && c.q.price && state.wallet) {
-        const need = Math.round(c.q.price * 100) * quantity;
+        const need = (orderType === "LIMIT" ? pricePaise : Math.round(c.q.price * 100)) * quantity;
         if (need > state.wallet.availableBalancePaise) {
           form.quantity.setAttribute("aria-invalid", "true");
           return (err.textContent = `That needs about ${paise(need)}. You have ${paise(state.wallet.availableBalancePaise)} available.`);
@@ -1062,11 +1106,15 @@
     const btn = $("order-submit");
     submitting = true; btn.disabled = true; updateEstimate();
     try {
-      const out = await api("/api/orders", { method: "POST", body: { symbol, side: s, quantity }, headers: { "Idempotency-Key": pendingKey } });
+      const body = { symbol, side: s, quantity, orderType };
+      if (orderType === "LIMIT") body.limitPricePaise = pricePaise;
+      if (orderType === "STOP_LOSS") body.triggerPricePaise = pricePaise;
+      const out = await api("/api/orders", { method: "POST", body, headers: { "Idempotency-Key": pendingKey } });
       pendingKey = null;
       const o = out.order;
       if (!state.orders.some((x) => x._id === o._id)) state.orders.unshift(o);
-      toast(out.message || "Order received", `${s} ${quantity} ${symbol}, waiting for a worker.`);
+      if (o.status === "REJECTED") toast("Order rejected", o.rejectionReason || "Not placed", "err");
+      else toast(out.message || "Order received", `${s} ${quantity} ${symbol}, ${orderType === "MARKET" ? "waiting for a worker" : "waiting for its price"}.`);
       spark(s === "SELL" ? form.querySelector('[data-rb="hold"]') : btn);
       await refresh(["wallet"]);
     } catch (ex) {
@@ -1099,12 +1147,10 @@
         const filled = o.status === "COMPLETED";
         const title = filled ? "Order filled" : "Order rejected";
         const detail = filled ? `${o.side} ${o.quantity} ${o.symbol} at ${paise(o.executionPricePaise)}` : (o.rejectionReason || `${o.side} ${o.symbol} was not filled`);
-        state.notifs.unshift({ id: o._id + o.status, side: o.side, status: o.status, title, detail, at: Date.now(), read: view === "notifications" });
-        saveNotifs();
         if (prefs.toasts) toast(title, detail + ".", filled ? "ok" : "err");
       }
       quoteCache.delete(o.symbol);
-      refresh(["wallet", "holdings", "tx", "phist"]);
+      refresh(["wallet", "holdings", "tx", "phist", "notifs"]);
     });
   }
 
@@ -1113,8 +1159,7 @@
   // =====================================================
   async function enterApp() {
     if (!state.user) state.user = await api("/api/auth/me");
-    state.watch = store.json(userKey("watch"), DEFAULT_WATCH.slice());
-    state.notifs = store.json(userKey("notifs"), []);
+    await loadWatch().catch(() => { state.watch = []; });
     $("auth").hidden = true;
     $("shell").hidden = false;
     connectSocket();

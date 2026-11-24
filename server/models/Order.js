@@ -24,8 +24,40 @@ const orderSchema = new mongoose.Schema(
     orderType: {
       type: String,
       required: true,
-      enum: ["MARKET"],
+      enum: ["MARKET", "LIMIT", "STOP_LOSS"],
       default: "MARKET"
+    },
+
+    // LIMIT: BUY at or below this price, SELL at or above it.
+    limitPricePaise: {
+      type: Number,
+      default: null,
+      min: 1
+    },
+
+    // STOP_LOSS (SELL only): sell at market once the price falls to this level.
+    triggerPricePaise: {
+      type: Number,
+      default: null,
+      min: 1
+    },
+
+    // Money held back in the wallet for an open LIMIT BUY.
+    reservedAmountPaise: {
+      type: Number,
+      default: 0,
+      min: 0
+    },
+
+    // SELL only: what the sold shares cost and the profit or loss made.
+    costBasisPaise: {
+      type: Number,
+      default: null
+    },
+
+    realizedProfitLossPaise: {
+      type: Number,
+      default: null
     },
 
     quantity: {
@@ -37,7 +69,8 @@ const orderSchema = new mongoose.Schema(
     status: {
       type: String,
       required: true,
-      enum: ["PENDING", "PROCESSING", "COMPLETED", "REJECTED", "CANCELLED"],
+      // OPEN: a LIMIT or STOP_LOSS order waiting for its price.
+      enum: ["PENDING", "PROCESSING", "OPEN", "COMPLETED", "REJECTED", "CANCELLED"],
       default: "PENDING"
     },
 
@@ -100,6 +133,13 @@ orderSchema.index(
   {
     userId: 1,
     createdAt: -1
+  }
+);
+
+// The trigger watcher looks up OPEN orders.
+orderSchema.index(
+  {
+    status: 1
   }
 );
 

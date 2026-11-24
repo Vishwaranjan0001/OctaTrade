@@ -5,6 +5,8 @@ import walletRoutes from "./routes/walletRoutes.js";
 import portfolioRoutes from "./routes/portfolioRoutes.js";
 import orderRoutes from "./routes/orderRoutes.js";
 import schedulerRoutes from "./routes/schedulerRoutes.js";
+import watchlistRoutes from "./routes/watchlistRoutes.js";
+import notificationRoutes from "./routes/notificationRoutes.js";
 
 const app = express();
 
@@ -22,5 +24,7 @@ app.use("/api/wallet", walletRoutes);
 app.use("/api/portfolio", portfolioRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/scheduler", schedulerRoutes);
+app.use("/api/watchlist", watchlistRoutes);
+app.use("/api/notifications", notificationRoutes);
 
 export default app;

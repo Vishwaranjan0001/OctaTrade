@@ -5,6 +5,7 @@ import { connectDatabase } from "./config/database.js";
 import { connectRedis, redisClient } from "./config/redis.js";
 import { Order } from "./models/Order.js";
 import { enqueueOrder } from "./scheduler/scheduler.js";
+import { startTriggerWatcher, stopTriggerWatcher } from "./scheduler/triggerWatcher.js";
 
 const WORKER_COUNT = Number(process.env.WORKER_COUNT) || 3;
 const RESTART_DELAY_MS = 1000;
@@ -39,8 +40,7 @@ async function requeueUnfinishedOrders() {
 
   console.log(`Re-queued ${pendingOrders.length} unfinished orders`);
 
-  await mongoose.disconnect();
-  redisClient.destroy();
+  // The connections stay open: the trigger watcher in this process uses them.
 }
 
 function startWorker() {
@@ -65,8 +65,11 @@ function startWorker() {
 
 function shutdown() {
   shuttingDown = true;
+  stopTriggerWatcher();
   for (const timer of restartTimers) clearTimeout(timer);
   for (const worker of workers) worker.kill("SIGTERM");
+  mongoose.disconnect();
+  redisClient.destroy();
 }
 
 process.on("SIGINT", shutdown);
@@ -79,3 +82,5 @@ for (let i = 0; i < WORKER_COUNT; i++) {
 }
 
 console.log(`Started ${WORKER_COUNT} workers`);
+
+startTriggerWatcher();

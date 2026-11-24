@@ -92,6 +92,22 @@ export async function enqueueOrder(order) {
   ]);
 }
 
+// A cancelled order leaves whichever queue it is in. Workers would skip it anyway
+// (it is no longer PENDING), but this keeps the queues clean.
+export async function removeQueuedOrder(order) {
+  const orderId = order._id.toString();
+  const userId = order.userId.toString();
+
+  await redisClient.sendCommand(["ZREM", ORDER_QUEUE_KEY, orderId]);
+  await redisClient.sendCommand(["LREM", userQueueKey(userId), "0", orderId]);
+
+  const ordersLeft = await redisClient.sendCommand(["LLEN", userQueueKey(userId)]);
+
+  if (ordersLeft === 0) {
+    await redisClient.sendCommand(["LREM", RR_USERS_KEY, "0", userId]);
+  }
+}
+
 async function takeSortedOrder() {
   const result = await redisClient.sendCommand(["ZPOPMIN", ORDER_QUEUE_KEY]);
 

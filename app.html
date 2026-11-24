@@ -361,6 +361,15 @@
         </section>
       </div>
       <section class="card">
+        <div class="card-head"><h2>Closed trades</h2><span class="muted">From completed sells</span></div>
+        <div class="info-grid">
+          <div><span class="muted">Realized P/L</span><b id="a-realized">—</b></div>
+          <div><span class="muted">Win rate</span><b id="a-winrate">—</b></div>
+          <div><span class="muted">Closed trades</span><b id="a-closed">—</b></div>
+          <div><span class="muted">Wins / losses</span><b id="a-wl">—</b></div>
+        </div>
+      </section>
+      <section class="card">
         <div class="card-head"><h2>Risk observations</h2><span class="muted">From current holdings</span></div>
         <ul class="obs" id="a-obs"></ul>
       </section>
@@ -422,7 +431,7 @@
 
     <!-- Notifications -->
     <section class="view" data-view="notifications" hidden>
-      <div class="page-head"><div><p class="kicker">Signal centre</p><h1 class="page-title" data-rb="title">Notifications</h1><p class="muted">Order updates that reached this browser over the live socket.</p></div><button class="btn btn-ghost" id="n-clear" type="button">Clear all</button></div>
+      <div class="page-head"><div><p class="kicker">Signal centre</p><h1 class="page-title" data-rb="title">Notifications</h1><p class="muted">Order fills, rejections and cancellations, saved to your account.</p></div><button class="btn btn-ghost" id="n-clear" type="button">Clear all</button></div>
       <section class="card"><div class="feed-mount" data-rb="feed" data-id="n-list" data-empty="No notifications yet. Order fills and rejections will appear here."></div></section>
     </section>
 
@@ -452,7 +461,7 @@
           <div class="card-head"><h2>Account boundaries</h2></div>
           <ul class="obs">
             <li><b>Virtual money</b><span>Orders use virtual INR and update your simulated wallet and holdings.</span></li>
-            <li><b>Market orders only</b><span>Limit, stop-loss and real brokerage execution are not connected.</span></li>
+            <li><b>Market, limit and stop-loss orders</b><span>Real brokerage execution is not connected.</span></li>
             <li><b>Protected data</b><span>Your wallet, orders and portfolio need your sign-in token.</span></li>
           </ul>
         </section>
@@ -515,12 +524,24 @@
         <input name="quantity" id="o-qty" type="number" min="1" step="1" value="1" inputmode="numeric" />
       </label>
       <div class="qty-mount" data-rb="qty"></div>
+      <label class="field">
+        <span>Order type</span>
+        <select name="orderType" id="o-type">
+          <option value="MARKET">Market</option>
+          <option value="LIMIT">Limit</option>
+          <option value="STOP_LOSS">Stop-loss (sell)</option>
+        </select>
+      </label>
+      <label class="field" id="o-price-field" hidden>
+        <span id="o-price-label">Limit price (₹)</span>
+        <input name="price" id="o-price" type="number" min="0.05" step="0.05" inputmode="decimal" />
+      </label>
       <div class="est"><span>Estimated value</span><b id="o-est">—</b></div>
       <div class="est"><span id="o-power-k">Buying power</span><b id="o-power">—</b></div>
       <p class="err" id="order-err" role="alert"></p>
       <button class="btn btn-ink btn-wide" id="order-submit" type="submit">Place buy order</button>
       <div class="hold-mount" data-rb="hold" hidden></div>
-      <p class="fine">Fills at the live price when a worker picks it up. No limit or stop orders yet.</p>
+      <p class="fine">Market fills at the live price. Limit and stop-loss wait as OPEN until the price is reached; cancel them from Orders.</p>
     </form>
   </section>
 </template>
