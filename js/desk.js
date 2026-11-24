@@ -106,6 +106,95 @@
     if (el) { el.textContent = up ? "Connected" : "Offline"; el.className = "pill " + (up ? "pill-live" : "pill-bad"); }
   }
 
+  // ---------- Symbol suggestions ----------
+  // Type a few letters of a symbol or company name; matches from /api/stocks/search
+  // appear under the box. Arrow keys + Enter, or a click, fill the box with the symbol.
+  function attachSuggest(input) {
+    const host = input.parentElement;
+    const list = document.createElement("ul");
+    list.className = "suggest";
+    list.id = input.id + "-suggest";
+    list.setAttribute("role", "listbox");
+    list.hidden = true;
+    host.classList.add("suggest-host");
+    host.appendChild(list);
+    input.setAttribute("aria-autocomplete", "list");
+    input.setAttribute("aria-controls", list.id);
+    input.setAttribute("aria-expanded", "false");
+
+    let items = [];
+    let active = -1;
+    let timer = 0;
+    let latest = 0;       // ignore answers that arrive after a newer keystroke
+    let picking = false;  // true while we fill the box ourselves
+
+    function close() {
+      list.hidden = true; active = -1; items = [];
+      input.setAttribute("aria-expanded", "false");
+      input.removeAttribute("aria-activedescendant");
+    }
+    function mark(i) {
+      active = i;
+      [...list.children].forEach((li, n) => {
+        li.classList.toggle("is-active", n === i);
+        li.setAttribute("aria-selected", String(n === i));
+        if (n === i) { input.setAttribute("aria-activedescendant", li.id); li.scrollIntoView({ block: "nearest" }); }
+      });
+      if (i < 0) input.removeAttribute("aria-activedescendant");
+    }
+    function show(results) {
+      items = results;
+      if (!items.length) return close();
+      list.innerHTML = items.map((s, n) =>
+        `<li role="option" id="${list.id}-${n}" data-i="${n}"><b>${esc(s.symbol)}</b><span>${esc(s.name)}</span></li>`).join("");
+      list.hidden = false; active = -1;
+      input.setAttribute("aria-expanded", "true");
+    }
+    function pick(n) {
+      const s = items[n];
+      if (!s) return;
+      picking = true;
+      input.value = s.symbol;
+      input.dispatchEvent(new Event("input", { bubbles: true })); // let other listeners (filter, estimate) react
+      picking = false;
+      close();
+      input.focus();
+    }
+
+    input.addEventListener("input", () => {
+      if (picking) return;
+      clearTimeout(timer);
+      const q = input.value.trim();
+      if (!q) { latest++; return close(); }
+      timer = setTimeout(async () => {
+        const mine = ++latest;
+        try {
+          const { results } = await api(`/api/stocks/search?q=${encodeURIComponent(q)}`);
+          if (mine === latest && document.activeElement === input) show(results);
+        } catch { if (mine === latest) close(); }
+      }, 150);
+    });
+    input.addEventListener("keydown", (e) => {
+      if (list.hidden) return;
+      if (e.key === "ArrowDown") { e.preventDefault(); mark((active + 1) % items.length); }
+      else if (e.key === "ArrowUp") { e.preventDefault(); mark(active <= 0 ? items.length - 1 : active - 1); }
+      else if (e.key === "Enter" && active >= 0) { e.preventDefault(); pick(active); }
+      else if (e.key === "Escape") { e.preventDefault(); close(); }
+    });
+    input.addEventListener("blur", close);
+    // mousedown (not click) so the box keeps focus until the pick is done
+    list.addEventListener("mousedown", (e) => {
+      const li = e.target.closest("li[data-i]");
+      if (!li) return;
+      e.preventDefault();
+      pick(Number(li.dataset.i));
+    });
+  }
+  ["top-search-input", "mk-input", "wl-add-input", "watch-input"].forEach((id) => {
+    const el = $(id);
+    if (el) attachSuggest(el);
+  });
+
   // quotes and price history, with short caches
   const quoteCache = new Map();
   async function quote(sym, maxAge = 15000) {
@@ -1020,6 +1109,7 @@
   const ticket = $("ticket-card");
   ticket.hidden = true;
   const form = $("order-form");
+  attachSuggest($("o-symbol")); // the ticket only exists now, so it is attached here
   window.dispatchEvent(new CustomEvent("pm:ticket"));
   function placeTicket() {
     const host = document.querySelector(`.view[data-view="${view}"] .ticket-host`);
