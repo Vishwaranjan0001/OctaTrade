@@ -136,12 +136,16 @@ export default function CandleScape() {
 
     /* three.js scene: studio lighting, lacquered candles, soft shadows */
     const renderer = new WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: 'high-performance' });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5)); // glossy clearcoat is costly per pixel
     renderer.outputColorSpace = SRGBColorSpace;
     renderer.toneMapping = NeutralToneMapping; // keeps the brand colours true and rolls off bright highlights
     renderer.toneMappingExposure = 0.86;
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = VSMShadowMap; // blurred, soft-edged shadows
+    // The light never moves, so the shadow only needs redrawing while candles grow or morph
+    // (see frame()), not on every frame while the camera drifts.
+    renderer.shadowMap.autoUpdate = false;
+    renderer.shadowMap.needsUpdate = true;
     const scene = new Scene();
     scene.fog = new Fog(PAPER, 11, 22); // the far end melts into the page colour
     const camera = new PerspectiveCamera(26, 2, 0.1, 100);
@@ -156,10 +160,10 @@ export default function CandleScape() {
     const key = new DirectionalLight(0xfff1dc, 1.9); // warm key light, upper left
     key.position.set(-5, 9, 7);
     key.castShadow = true;
-    key.shadow.mapSize.set(2048, 2048);
+    key.shadow.mapSize.set(1024, 1024);
     Object.assign(key.shadow.camera, { left: -8, right: 8, top: 7, bottom: -5, near: 1, far: 30 });
-    key.shadow.radius = 10;
-    key.shadow.blurSamples = 20;
+    key.shadow.radius = 5; // same softness as radius 10 on the old 2048 map
+    key.shadow.blurSamples = 12;
     key.shadow.bias = -0.0004;
     scene.add(key);
     const rim = new DirectionalLight(0xd9e8ff, 1.3); // cool rim from behind, separates the candles from the page
@@ -240,15 +244,21 @@ export default function CandleScape() {
     const frame = (now) => {
       const ease = reduce ? 1 : 0.11;
       if (born === null && live.current.data) born = now;
+      let moving = false;
       for (let i = 0; i < MAX; i += 1) {
         const t = target(i);
         if (!t) continue;
         const c = cur[i];
-        for (const k of ['x', 'b0', 'b1', 'w0', 'w1', 'width', 'vol']) c[k] += (t[k] - c[k]) * ease;
+        for (const k of ['x', 'b0', 'b1', 'w0', 'w1', 'width', 'vol']) {
+          const step = (t[k] - c[k]) * ease;
+          if (Math.abs(step) > 0.0004) moving = true;
+          c[k] += step;
+        }
         tint[i].lerp(t.up ? UP : DOWN, reduce ? 1 : 0.15);
 
         // entrance: candles rise from the floor one after another, left to right
         const g = reduce ? 1 : smooth(clamp01((now - born - i * 22) / 650));
+        if (g < 1) moving = true;
         const depth = c.width;
         put(bodies, i, c.x, c.b0 * g, 0, c.width, (c.b1 - c.b0) * g, depth);
         bodies.setColorAt(i, tint[i]);
@@ -269,9 +279,24 @@ export default function CandleScape() {
       camera.position.set(Math.sin(view.yaw) * r, 4.6 + view.pitch * 6, Math.cos(view.yaw) * r);
       camera.lookAt(0, 1.45, -0.6);
 
+      if (moving) renderer.shadowMap.needsUpdate = true;
       renderer.render(scene, camera);
       if (running) raf = requestAnimationFrame(frame);
     };
+
+    // Compile the shaders in idle time while the visitor is still up in the hero, so scrolling
+    // into this section does not freeze for a moment while the GPU builds them.
+    const warm = () => {
+      if (running) return;
+      const done = () => {
+        if (running) return;
+        renderer.render(scene, camera); // also builds the shadow-map programs (section is invisible now)
+        renderer.shadowMap.needsUpdate = true;
+      };
+      if (renderer.compileAsync) renderer.compileAsync(scene, camera).then(done, done);
+      else done();
+    };
+    const warmId = 'requestIdleCallback' in window ? requestIdleCallback(warm, { timeout: 4000 }) : setTimeout(warm, 2000);
 
     const start = () => {
       if (running) return;
@@ -303,6 +328,8 @@ export default function CandleScape() {
     window.addEventListener('scroll', onScroll, { passive: true });
     window.addEventListener('pointermove', onPointer);
     return () => {
+      if ('cancelIdleCallback' in window) cancelIdleCallback(warmId);
+      else clearTimeout(warmId);
       stop();
       watch.disconnect();
       ro.disconnect();
