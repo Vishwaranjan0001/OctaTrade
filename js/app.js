@@ -427,6 +427,14 @@ function initHeaderMode() {
     onToggle: (self) => header.classList.toggle("header-solid", self.isActive),
     end: "max",
   });
+
+  // Hide the bar while scrolling down, show it again when scrolling up.
+  let lastScroll = 0;
+  lenis.on("scroll", ({ scroll }) => {
+    const goingDown = scroll > lastScroll;
+    header.classList.toggle("header-hidden", goingDown && scroll > 80);
+    lastScroll = scroll;
+  });
 }
 
 /* -----------------------------------------------------

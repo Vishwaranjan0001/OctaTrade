@@ -53,6 +53,8 @@
 <!-- 3. Hero (standalone 100vh) -->
 <section class="hero-standalone" id="top">
   <div class="hero-inner">
+    <!-- React island: today's NIFTY 50 line, drawn above the hero text (islands/landing.jsx HeroPulse) -->
+    <div class="hero-pulse" id="rb-pulse" aria-hidden="true"></div>
     <span class="section-label">Paper trading · NSE · ₹0 real money</span>
     <!-- React Bits SplitText re-renders these two lines after the loader (islands/landing.jsx HeroHeading) -->
     <h1 class="hero-heading" id="rb-hero-heading" aria-label="Trade real markets. Risk nothing.">
@@ -62,12 +64,11 @@
     <p class="hero-tagline">Explore Indian stocks, test your trading ideas and follow your portfolio. Start with ₹1,00,000 in virtual funds, with no real capital at risk.</p>
     <div class="hero-actions">
       <div id="rb-hero-cta" class="magnet-mount"><a class="btn btn-ink" href="app.html">Start trading</a></div>
-      <span class="hero-note">Virtual money only. Free to use.</span>
     </div>
   </div>
 
-  <!-- Market preview uses current quotes when available. Hidden under 900px. -->
-  <aside class="hero-ticket-mount" id="rb-ticket" aria-label="Preview of NSE market quotes"></aside>
+  <!-- Rotating gold rupee symbol, Three.js (islands/Rupee3D.jsx). Hidden under 900px. -->
+  <aside class="hero-ticket-mount" id="rb-ticket" aria-label="Gold rupee symbol"></aside>
 
   <!-- React Bits ScrollVelocity proof strip -->
   <div class="hero-tape" id="rb-tape" aria-hidden="true"></div>
@@ -105,6 +106,8 @@
 
       <h2 class="section-heading">Virtual rupees, real prices.</h2>
       <p class="section-body">Start with ₹1,00,000 in virtual funds. Practise buying and selling Indian equities, explore different position sizes and add practice funds whenever you need them.</p>
+      <!-- React island: tear-off practice-funds voucher, React Bits TearTicket (islands/Voucher.jsx) -->
+      <div class="section-note voucher-mount" id="rb-voucher"></div>
     </div>
   </section>
 
@@ -114,6 +117,8 @@
 
       <h2 class="section-heading">Find your next idea.</h2>
       <p class="section-body">Explore NSE stocks with price charts and trading volume. Switch from a daily view to a full year to put each move in context.</p>
+      <!-- React island: 3D candlestick chart (Three.js) that morphs 1D to 1Y as you scroll (islands/CandleScape.jsx) -->
+      <div class="section-note scape-mount" id="rb-scape"></div>
     </div>
   </section>
 
@@ -123,6 +128,8 @@
 
       <h2 class="section-heading">See the whole picture.</h2>
       <p class="section-body">Keep your holdings, available cash and unrealised profit or loss in one place. Follow how each position contributes to your virtual portfolio.</p>
+      <!-- React island: coin rolls along a portfolio line as you scroll (islands/CoinTrail.jsx) -->
+      <div class="section-note trail-mount" id="rb-trail-picture"></div>
     </div>
   </section>
 
@@ -155,6 +162,8 @@
 
       <h2 class="section-heading">Put your ideas to work.</h2>
       <p class="section-body">Choose a stock, set your position size and practise buying or selling with virtual funds. Track each trade and refine your approach without committing real capital.</p>
+      <!-- React island: coin follows one trade from idea to fill as you scroll (islands/CoinTrail.jsx) -->
+      <div class="section-note trail-mount" id="rb-trail-ideas"></div>
     </div>
   </section>
 
