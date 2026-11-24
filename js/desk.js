@@ -260,7 +260,7 @@
   function chartOptions(extra = {}) {
     return {
       autoSize: true,
-      layout: { background: { type: "solid", color: "transparent" }, textColor: css("--ink-faint"), fontFamily: "'JetBrains Mono', monospace", fontSize: 11 },
+      layout: { background: { type: "solid", color: "transparent" }, textColor: css("--ink-faint"), fontFamily: "'JetBrains Mono', monospace", fontSize: 12 },
       grid: { vertLines: { color: css("--line") }, horzLines: { color: css("--line") } },
       rightPriceScale: { borderColor: css("--line"), scaleMargins: { top: 0.12, bottom: 0.08 } },
       timeScale: { borderColor: css("--line"), fixLeftEdge: true, fixRightEdge: true },

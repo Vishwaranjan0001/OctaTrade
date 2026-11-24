@@ -6,6 +6,8 @@ import SplitText from './reactbits/SplitText/SplitText.jsx';
 import ScrollVelocity from './reactbits/ScrollVelocity/ScrollVelocity.jsx';
 import CountUp from './reactbits/CountUp/CountUp.jsx';
 import Magnet from './reactbits/Magnet/Magnet.jsx';
+import SpotlightCard from './reactbits/SpotlightCard/SpotlightCard.jsx';
+import Counter from './reactbits/Counter/Counter.jsx';
 import Spark from './shared/Spark.jsx';
 import { Manifesto, Markets, HowItWorks, Features, RiskCalc, AppPreview, FinalCta, Wordmark } from './sections.jsx';
 
@@ -123,23 +125,146 @@ function Tape() {
 }
 
 /* ---------- Market preview: quotes from the same feed as the trading desk ---------- */
+// 1-month daily closes from /api/quotes/:symbol/history, fetched once per symbol.
+const PREVIEW_SYMBOLS = ['RELIANCE.NS', 'TCS.NS', 'INFY.NS'];
+const historyCache = {};
+function useHistory(symbol) {
+  const [closes, setCloses] = useState(historyCache[symbol] || null);
+  useEffect(() => {
+    if (historyCache[symbol]) return;
+    let alive = true;
+    fetch(`/api/quotes/${encodeURIComponent(symbol)}/history?range=1M`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        const list = d && Array.isArray(d.candles) ? d.candles.map((c) => c.close).filter((v) => typeof v === 'number') : [];
+        if (list.length < 2) return;
+        historyCache[symbol] = list;
+        if (alive) setCloses(list);
+      })
+      .catch(() => {});
+    return () => { alive = false; };
+  }, [symbol]);
+  return closes;
+}
+
+// Change over the month: latest price against the first close in the history.
+function monthChange(closes, price) {
+  if (!closes || closes.length < 2) return null;
+  const last = price != null ? price : closes[closes.length - 1];
+  return ((last - closes[0]) / closes[0]) * 100;
+}
+
+function Sparkline({ closes, up, width, height, fill }) {
+  if (!closes) return <span className="mp-spark mp-spark-empty" style={{ width, height }} />;
+  const min = Math.min(...closes);
+  const max = Math.max(...closes);
+  const span = max - min || 1;
+  const pts = closes.map((v, i) => [
+    (i / (closes.length - 1)) * width,
+    height - 2 - ((v - min) / span) * (height - 4),
+  ]);
+  const line = pts.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(' ');
+  const color = up ? 'var(--accent)' : 'var(--accent-2)';
+  const gradId = `mp-grad-${up ? 'up' : 'down'}`;
+  return (
+    <svg className="mp-spark" width={width} height={height} viewBox={`0 0 ${width} ${height}`} aria-hidden="true">
+      {fill && (
+        <>
+          <defs>
+            <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={color} stopOpacity="0.22" />
+              <stop offset="100%" stopColor={color} stopOpacity="0" />
+            </linearGradient>
+          </defs>
+          <polygon points={`0,${height} ${line} ${width},${height}`} fill={`url(#${gradId})`} />
+        </>
+      )}
+      <polyline points={line} fill="none" stroke={color} strokeWidth="1.6" strokeLinejoin="round" strokeLinecap="round" />
+      <circle cx={pts[pts.length - 1][0]} cy={pts[pts.length - 1][1]} r="2.6" fill={color} />
+    </svg>
+  );
+}
+
+function ChangeBadge({ value }) {
+  if (value == null) return <span className="mp-badge mp-badge-flat">1M</span>;
+  const up = value >= 0;
+  return (
+    <span className={`mp-badge ${up ? 'mp-badge-up' : 'mp-badge-down'}`}>
+      {up ? '▲' : '▼'} {Math.abs(value).toFixed(2)}%
+    </span>
+  );
+}
+
+function Price({ value, size, prefix = '₹' }) {
+  if (value == null) return <span className="mp-price-empty">—</span>;
+  return (
+    <Counter
+      value={value}
+      locale="en-IN"
+      decimals={2}
+      prefix={prefix}
+      fontSize={size}
+      duration={0.8}
+      stagger={0.03}
+      intro={!reduce}
+      motionBlur={!reduce}
+    />
+  );
+}
+
+function PreviewRow({ quote }) {
+  const closes = useHistory(quote.s);
+  const change = monthChange(closes, quote.p);
+  return (
+    <a className="mp-row" href={`app.html#stock/${encodeURIComponent(quote.s)}`}>
+      <span className="mp-row-name"><b>{short(quote.s)}</b><small>{quote.n}</small></span>
+      <Sparkline closes={closes} up={change == null || change >= 0} width={64} height={26} />
+      <span className="mp-row-price">
+        <Price value={quote.p} size={15} />
+        <ChangeBadge value={change} />
+      </span>
+    </a>
+  );
+}
+
 function MarketPreview() {
   const quotes = useQuotes();
+  const nifty = quotes.find((q) => q.s === '^NSEI');
+  const niftyCloses = useHistory('^NSEI');
+  const niftyChange = monthChange(niftyCloses, nifty && nifty.p);
+  const rows = PREVIEW_SYMBOLS.map((s) => quotes.find((q) => q.s === s)).filter(Boolean);
   return (
-    <div className="market-preview">
-      <div className="market-preview-head"><span>Market watch</span><span>NSE</span></div>
-      <h2>Your next idea<br />starts here.</h2>
+    <SpotlightCard
+      className="market-preview"
+      theme="light"
+      spotlightColor="#1f9e6e"
+      intensity={0.22}
+      spotlightSize={280}
+      borderGlow={0.9}
+      grain={0.05}
+      style={{ '--spotlight-card-surface': 'var(--card)' }}
+    >
+      <div className="market-preview-head">
+        <span className="mp-live"><i aria-hidden="true" />Market watch</span>
+        <span>NSE</span>
+      </div>
+
+      <div className="mp-index">
+        <div className="mp-index-top">
+          <span className="mp-index-name">NIFTY 50</span>
+          <ChangeBadge value={niftyChange} />
+        </div>
+        <div className="mp-index-price"><Price value={nifty && nifty.p} size={34} prefix="" /></div>
+        <Sparkline closes={niftyCloses} up={niftyChange == null || niftyChange >= 0} width={300} height={56} fill />
+        <span className="mp-index-range">Past month</span>
+      </div>
+
       <div className="market-preview-list">
-        {quotes.slice(0, 3).map((q) => (
-          <a key={q.s} href={`app.html#stock/${encodeURIComponent(q.s)}`}>
-            <span><b>{short(q.s)}</b><small>{q.n}</small></span>
-            <span className="market-preview-price">{q.p != null ? `₹${money(q.p)}` : 'View stock →'}</span>
-          </a>
-        ))}
+        {rows.map((q) => <PreviewRow key={q.s} quote={q} />)}
       </div>
       <p>Latest available quotes · May be delayed</p>
       <a className="market-preview-cta" href="app.html#watchlist">Build your watchlist <span aria-hidden="true">↗</span></a>
-    </div>
+    </SpotlightCard>
   );
 }
 
@@ -195,7 +320,8 @@ function boot() {
   const endCta = readLink('rb-cta', '#', 'Get started →');
   mount('rb-hero-heading', <HeroHeading line1={line1} line2={line2} />);
   mount('rb-tape', <Tape />);
-  if (window.innerWidth > 900) mount('rb-ticket', <MarketPreview />);
+  // Always mounted; css/style.css hides it at 900px and below, so resizing works both ways.
+  mount('rb-ticket', <MarketPreview />);
   mount('rb-hero-cta', <MagnetLink className="btn btn-ink" href={heroCta.href}>{heroCta.text}</MagnetLink>);
   mount('rb-cta', <MagnetLink className="cta-button" href={endCta.href}>{endCta.text}</MagnetLink>);
   document.querySelectorAll('.stat-number[data-count]').forEach((el) =>

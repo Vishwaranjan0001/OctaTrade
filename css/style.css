@@ -9,8 +9,9 @@
   --paper: #e3ded2;
   --paper-deep: #e9e3d6;
   --ink: #141414;
-  --ink-soft: #57534c;
-  --ink-faint: #8a857b;
+  /* Muted text: both pass WCAG AA (4.5:1) on --paper and --card. */
+  --ink-soft: #46423b;
+  --ink-faint: #625e55;
   --night: #101211;
   --on-night: #f1eee6;
   --on-night-soft: #a6a39a;
@@ -69,7 +70,7 @@ body::after {
 }
 #loader-bar { width: min(280px, 60vw); height: 2px; background: rgba(0,0,0,0.1); overflow: hidden; }
 #loader-bar-fill { display: block; height: 100%; width: 0%; background: var(--accent); transition: width 0.2s ease; }
-#loader-percent { font-family: var(--font-mono); font-size: 0.75rem; letter-spacing: 0.2em; color: var(--ink-soft); }
+#loader-percent { font-family: var(--font-mono); font-size: 0.82rem; letter-spacing: 0.2em; color: var(--ink-soft); }
 
 /* -----------------------------------------------------
    2. Header
@@ -93,7 +94,7 @@ body::after {
 .site-header ul {
   display: flex; align-items: center; gap: 30px;
   list-style: none;
-  font-size: 0.8rem;
+  font-size: 0.86rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -117,7 +118,7 @@ body::after {
 .section-label {
   display: inline-block;
   font-family: var(--font-mono);
-  font-size: 0.74rem;
+  font-size: 0.82rem;
   letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--ink-soft);
@@ -156,7 +157,7 @@ body::after {
 }
 .btn-ink { background: var(--ink); color: var(--paper); }
 .btn-ink:hover { background: var(--accent); transform: translateY(-2px); }
-.hero-note { font-size: 0.86rem; color: var(--ink-soft); }
+.hero-note { font-size: 0.92rem; color: var(--ink-soft); }
 
 /* Market watch preview: real quotes with an honest unavailable state. */
 .hero-ticket-mount {
@@ -166,18 +167,37 @@ body::after {
   transform: translateY(-52%);
   z-index: 3;
 }
-.market-preview { background: var(--card); padding: 28px; border-radius: 6px; font-family: var(--font-body); }
-.market-preview-head { display: flex; justify-content: space-between; font-size: 14px; color: var(--ink-soft); }
-.market-preview-head span:last-child { color: var(--accent-ink, #136b4a); font-weight: 600; }
-.market-preview h2 { margin: 24px 0; font-family: var(--font-display); font-size: clamp(28px, 2.6vw, 38px); font-weight: 600; line-height: 1.05; letter-spacing: -.03em; }
-.market-preview-list { display: grid; gap: 4px; }
-.market-preview-list a { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 0; transition: color 150ms; }
-.market-preview-list a:hover { color: #136b4a; }
-.market-preview-list b { font-size: 14px; }
-.market-preview-list small { display: block; font-size: 12px; color: var(--ink-soft); margin-top: 4px; }
-.market-preview-price { font-size: 15px; font-variant-numeric: tabular-nums; white-space: nowrap; }
-.market-preview p { margin-top: 16px; font-size: 12px; line-height: 1.5; color: var(--ink-soft); }
-.market-preview-cta { display: flex; justify-content: space-between; margin-top: 24px; font-size: 15px; font-weight: 600; color: #136b4a; }
+/* The card shell is React Bits SpotlightCard (cursor spotlight + glowing edge). */
+.spotlight-card.market-preview { padding: 24px; border-radius: 18px; font-family: var(--font-body); color: var(--ink); }
+.market-preview-head { display: flex; justify-content: space-between; align-items: center; font-size: 14px; color: var(--ink-soft); }
+.market-preview-head span:last-child { color: var(--accent-ink, #136b4a); font-weight: 600; letter-spacing: .08em; font-size: 13.5px; }
+.mp-live { display: inline-flex; align-items: center; gap: 8px; }
+.mp-live i { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 0 rgba(31, 158, 110, .5); animation: mp-pulse 2s ease-out infinite; }
+@keyframes mp-pulse { 0% { box-shadow: 0 0 0 0 rgba(31, 158, 110, .5); } 70%, 100% { box-shadow: 0 0 0 8px rgba(31, 158, 110, 0); } }
+
+/* Nifty 50 headline: rolling-digit price (React Bits Counter) + month sparkline */
+.mp-index { margin: 14px 0 6px; padding-bottom: 12px; border-bottom: 1px solid rgba(20, 20, 20, .08); }
+.mp-index-top { display: flex; justify-content: space-between; align-items: center; }
+.mp-index-name { font-family: var(--font-mono); font-size: 13.5px; letter-spacing: .12em; color: var(--ink-soft); }
+.mp-index-price { margin: 6px 0 8px; font-family: var(--font-display); font-weight: 600; letter-spacing: -.02em; min-height: 36px; }
+.mp-index .mp-spark { display: block; width: 100%; height: auto; }
+.mp-index-range { display: block; margin-top: 6px; font-size: 12.5px; color: var(--ink-faint); }
+
+.mp-badge { display: inline-flex; align-items: center; gap: 3px; padding: 3px 7px; border-radius: 999px; font-size: 12.5px; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.mp-badge-up { color: #136b4a; background: rgba(31, 158, 110, .12); }
+.mp-badge-down { color: #b8432d; background: rgba(239, 91, 63, .12); }
+.mp-badge-flat { color: var(--ink-soft); background: rgba(20, 20, 20, .06); }
+
+.market-preview-list { display: grid; }
+.mp-row { display: grid; grid-template-columns: 1fr 64px auto; align-items: center; gap: 12px; padding: 8px 8px; margin: 0 -8px; border-radius: 10px; transition: background-color 150ms; }
+.mp-row:hover { background: rgba(31, 158, 110, .07); }
+.mp-row-name b { font-size: 14px; }
+.mp-row-name small { display: block; font-size: 13.5px; color: var(--ink-soft); margin-top: 3px; }
+.mp-row-price { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; font-variant-numeric: tabular-nums; }
+.mp-spark-empty { display: block; border-bottom: 1px dashed rgba(20, 20, 20, .15); }
+.mp-price-empty { color: var(--ink-faint); }
+.market-preview p { margin-top: 12px; font-size: 12.5px; line-height: 1.5; color: var(--ink-faint); }
+.market-preview-cta { display: flex; justify-content: space-between; margin-top: 16px; padding-top: 14px; border-top: 1px solid rgba(20, 20, 20, .08); font-size: 15px; font-weight: 600; color: #136b4a; }
 .market-preview-cta:hover { text-decoration: underline; text-underline-offset: 4px; }
 @media (min-width: 901px) and (max-width: 1150px) { .hero-inner { max-width: 59%; } .hero-heading { font-size: 6.6vw; } }
 .up { color: var(--accent); }
@@ -189,7 +209,7 @@ body::after {
   border-top: 1px solid rgba(20,20,20,0.12);
   border-bottom: 1px solid rgba(20,20,20,0.12);
   font-family: var(--font-mono);
-  font-size: 0.8rem;
+  font-size: 0.86rem;
   padding: 11px 0;
   z-index: 2;
   min-height: 42px;
@@ -209,7 +229,7 @@ body::after {
   transform: translateX(-50%);
   display: flex; flex-direction: column; align-items: center; gap: 8px;
   font-family: var(--font-mono);
-  font-size: 0.66rem;
+  font-size: 0.8rem;
   letter-spacing: 0.24em;
   text-transform: uppercase;
   color: var(--ink-soft);
@@ -351,7 +371,7 @@ body::after {
 .stat-prefix, .stat-suffix { font-size: clamp(1.4rem, 2.2vw, 2.6rem); color: var(--accent-bright); }
 .stat-label {
   font-family: var(--font-mono);
-  font-size: 0.74rem;
+  font-size: 0.82rem;
   letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--on-night-soft);
@@ -398,7 +418,7 @@ body::after {
 @media (max-width: 768px) {
   #scroll-container { height: 1050vh; }
   .site-header { padding: 18px 16px; }
-  .site-header ul { gap: 16px; font-size: 0.7rem; }
+  .site-header ul { gap: 16px; font-size: 0.8rem; }
   .site-header ul li:not(:last-child) { display: none; }
   .hero-standalone { padding: 0 16px; align-items: flex-start; padding-top: 22vh; }
   .hero-tape { bottom: 76px; }
