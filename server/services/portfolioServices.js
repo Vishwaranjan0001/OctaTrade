@@ -13,6 +13,7 @@ export async function getHoldingsByUserId(userId) {
   return holdings;
 }
 
+// Calculates the current value and profit/loss of a holding based on the latest market quote.
 
 export function calculateHoldingSummary(
   holding,
