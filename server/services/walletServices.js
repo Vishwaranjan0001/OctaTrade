@@ -18,6 +18,7 @@ export async function createWallet(userId, session) {
 
 // Retrieves a user's wallet using their user ID.
 // Returns null if the wallet does not exist.
+// Returns null if the wallet does not exist.
 export async function getWalletByUserId(userId) {
   const wallet = await Wallet.findOne({
     userId: userId
